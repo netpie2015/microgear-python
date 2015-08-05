@@ -8,7 +8,7 @@ import urllib
 import random
 import time
 
-def create(gearkey,gearsecret, appid, args = {}):
+def create(gearkey,gearsecret, appid="", args = {}):
     if 'debugmode' in args:
         logging.basicConfig(level=logging.DEBUG)
 
