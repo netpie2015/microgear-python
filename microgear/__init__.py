@@ -18,7 +18,6 @@ scope = ""
 gearexaddress = None
 gearexport = None
 subscriptions = []
-callbacks = {}
-
-logging.basicConfig()
+mqtt_client = None
+subscribe_list = []
 logger = logging.getLogger("python-microgear")
