@@ -127,7 +127,7 @@ def get_requesttoken(cached):
         }
         cache.set_item("microgear.cache", cached)
         requesttoken = cached["requesttoken"]
-        get_accesstoken()
+        get_accesstoken(cached)
     else:
         logging.warning("Request token is not issued, please check your appkey and appsecret.")
 
