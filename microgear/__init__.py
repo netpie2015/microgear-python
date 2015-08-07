@@ -20,4 +20,5 @@ gearexport = None
 subscriptions = []
 mqtt_client = None
 subscribe_list = []
+pubilsh_list = []
 logger = logging.getLogger("python-microgear")

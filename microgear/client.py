@@ -8,11 +8,12 @@ import urllib
 import random
 import time
 import re
+import string
 import paho.mqtt.client as mqtt
 
-
-
-def create(gearkey,gearsecret, appid="", args = {}):
+list_on_message = []
+list_on_connect = []
+def create(gearkey,gearsecret, appid, args = {}):
     if 'debugmode' in args:
        logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -23,6 +24,7 @@ def create(gearkey,gearsecret, appid="", args = {}):
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%d/%m/%Y %I:%M:%S %p',
                         )
+
     microgear.gearkey = gearkey
     microgear.gearsecret = gearsecret
 
@@ -32,28 +34,39 @@ def create(gearkey,gearsecret, appid="", args = {}):
     microgear.accesstoken = None
     microgear.requesttoken = None
     microgear.client = None
-    microgear.scope = args.get("scope") or ""
+    microgear.scope = ""
 
     microgear.gearexaddress = None
     microgear.gearexport = None
 
     microgear.subscriptions = []
     microgear.callbacks = {}
-    microgear.subscribe_list = []
+    microgear.subscribe_list = {}
+    microgear.pubilsh_list = []
 
 def on_connect(client, userdata, rc):
-    for topic in microgear.subscribe_list:
-        client.subscribe(topic)
-    #client.publish("/abc/gearname/htmlgear", "Hello",0)
+    for key in microgear.subscribe_list.iterkeys():
+        client.subscribe(key)
+    
     print "Connected with result code "+str(rc) 
 
 
 def on_message(client, userdata, msg):
-    #client.publish("dns/all", "Thanks", 0)
-    print msg.topic+" "+str(msg.payload)
+    #client.publish("/piedemo/gearname/htmlgear", "ok i see"+str(int(time.time())))
+    
+    #for func in list_on_message:
+    #    func(str(msg.payload))
+    #print microgear.subscribe_list[msg.topic]
+
+    microgear.subscribe_list[msg.topic](str(msg.payload))
+
+    #for msg in microgear.pubilsh_list:
+        #print msg[0]+" "+msg[1]
+        #client.publish(msg[0],msg[1])
+    #print msg.topic+" "+str(msg.payload)
 
 def on_subscribe(client, userdata, mid, granted_qos):
-    client.publish("/piedemo/gearname/htmlgear", "Hello")
+    pass
     
 def on_disconnect(client, userdata, rc):
     print "Diconnected with result code "+str(rc)
@@ -67,30 +80,41 @@ def connect():
         times = times*1
 
     mqtt_client = mqtt.Client(microgear.accesstoken["token"])
+    endpoint = microgear.accesstoken["endpoint"].split("//")[1].split(":")
+    username = microgear.gearkey+"%"+str(int(time.time()))
+    password = hmac(microgear.accesstoken["secret"]+"&"+microgear.gearsecret,microgear.accesstoken["token"]+"%"+username)
+    mqtt_client.username_pw_set(username,password)
+    mqtt_client.connect(endpoint[0], int(endpoint[1]), 60)
 
     mqtt_client.on_connect = on_connect
     mqtt_client.on_message = on_message
     mqtt_client.on_subscribe = on_subscribe
     mqtt_client.on_disconnect = on_disconnect
-    endpoint = microgear.accesstoken["endpoint"].split("//")[1].split(":")
-    username = microgear.gearkey+"%"+str(int(time.time()))
-   
-    password = hmac(microgear.accesstoken["secret"]+"&"+microgear.gearsecret,microgear.accesstoken["token"]+"%"+username)
-    #userdata = {"username": username, "password": password, "client": microgear.accesstoken["token"]}
-    mqtt_client.username_pw_set(username,password)
-
-    mqtt_client.connect(endpoint[0], int(endpoint[1]), 60)
+    
     mqtt_client.loop_forever()
 
 
-def subscribe(topic):
-    microgear.subscribe_list.append(topic)
+def subscribe(topic,func):
+    microgear.subscribe_list["/piedemo/gearname/"+topic]=func
+
 
 def publish(topic,message):
-    pass
-    
+    microgear.pubilsh_list.append(["/"+microgear.appid+topic,message+str(int(time.time()))])
+    #client.publish("/piedemo/gearname/"+topic, "offfffffffff"+str(int(time.time())))
+def subscride(top):
+    if microgear.subscribe_list["/piedemo/gearname/"+topic]:
+       print "true" 
+def setname(topic):
+    subscribe(topic)
 
-            
+def chat(topic,message):
+    publish("/gearname/"+topic,message)
+    
+def on(event,func=""):
+    if event == "connent":
+        func
+    if event == "message":
+        list_on_message.append(func)
        
     
 def get_token():
@@ -114,7 +138,8 @@ def get_requesttoken(cached):
     logging.info("Requesting a request token.")
     consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
     client = oauth.Client(consumer)
-    verifier = random.getrandbits(32)
+    verifier = ''.join(random.sample(string.lowercase+string.digits,8))
+    print verifier
     params = {'oauth_callback': "scope=%s&appid=%s&verifier=%s" % (microgear.scope, microgear.appid, verifier)}
     resp, content = client.request(microgear.gearauthrequesttokenendpoint, "POST", body=urllib.urlencode(params))
     matchContent = re.match( r'oauth_token=(.*?)&oauth_token_secret=(.*?).*', content)
