@@ -11,9 +11,8 @@ import re
 import string
 import paho.mqtt.client as mqtt
 
-list_on_message = []
-list_on_connect = []
-def create(gearkey,gearsecret, appid, args = {}):
+
+def create(gearkey,gearsecret, appid="", args = {}):
     if 'debugmode' in args:
        logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -41,43 +40,47 @@ def create(gearkey,gearsecret, appid, args = {}):
 
     microgear.subscriptions = []
     microgear.callbacks = {}
-    microgear.subscribe_list = {}
+    microgear.subscribe_list = []
+    microgear.list_on_subscribe = {}
     microgear.pubilsh_list = []
+    microgear.list_on_message = []
+    microgear.list_on_connect = []
+    microgear.list_on_disconnect = []
 
-def on_connect(client, userdata, rc):
-    for key in microgear.subscribe_list.iterkeys():
-        client.subscribe(key)
-    
-    print "Connected with result code "+str(rc) 
+def client_on_connect(client, userdata, rc):
+    print "Connected with result code "+str(rc)
 
+    if rc == 0 : 
+        for func in microgear.list_on_connect:
+            func()
+        for topic in microgear.pubilsh_list :
+            client.publish(topic[0],topic[1])
+        for topic in microgear.subscribe_list :
+            client.subscribe(topic)
+            print "Auto subscribe "+topic 
+        for the_key, the_value in microgear.list_on_subscribe.iteritems():
+            client.subscribe(the_key)
+        
 
-def on_message(client, userdata, msg):
+def client_on_message(client, userdata, msg):
     #client.publish("/piedemo/gearname/htmlgear", "ok i see"+str(int(time.time())))
-    
-    #for func in list_on_message:
-    #    func(str(msg.payload))
-    #print microgear.subscribe_list[msg.topic]
+    if len(microgear.list_on_subscribe) > 0 :
+        microgear.list_on_subscribe[msg.topic](msg.topic,str(msg.payload))
 
-    microgear.subscribe_list[msg.topic](str(msg.payload))
-
-    #for msg in microgear.pubilsh_list:
-        #print msg[0]+" "+msg[1]
-        #client.publish(msg[0],msg[1])
-    #print msg.topic+" "+str(msg.payload)
-
-def on_subscribe(client, userdata, mid, granted_qos):
+def client_on_subscribe(client, userdata, mid, granted_qos):
     pass
     
-def on_disconnect(client, userdata, rc):
+def client_on_disconnect(client, userdata, rc):
+    for func in microgear.list_on_disconnect:
+        func()
     print "Diconnected with result code "+str(rc)
-
 
 def connect():
     times = 1
     while not microgear.accesstoken:
         get_token()
         time.sleep(times)
-        times = times*1
+        times = times+1
 
     mqtt_client = mqtt.Client(microgear.accesstoken["token"])
     endpoint = microgear.accesstoken["endpoint"].split("//")[1].split(":")
@@ -86,37 +89,36 @@ def connect():
     mqtt_client.username_pw_set(username,password)
     mqtt_client.connect(endpoint[0], int(endpoint[1]), 60)
 
-    mqtt_client.on_connect = on_connect
-    mqtt_client.on_message = on_message
-    mqtt_client.on_subscribe = on_subscribe
-    mqtt_client.on_disconnect = on_disconnect
+    mqtt_client.on_connect = client_on_connect
+    mqtt_client.on_message = client_on_message
+    mqtt_client.on_subscribe = client_on_subscribe
+    mqtt_client.on_disconnect = client_on_disconnect
     
     mqtt_client.loop_forever()
 
 
-def subscribe(topic,func):
-    microgear.subscribe_list["/piedemo/gearname/"+topic]=func
+def on_subscribe(topic,func):
+    microgear.list_on_subscribe["/piedemo/gearname/"+topic]=func
 
+def on_connect(func):
+    microgear.list_on_connect.append(func)
+
+def on_disconnect(func):
+    microgear.list_on_disconnect.append(func)
+
+def subscride(topic):
+    microgear.subscribe_list.append("/"+microgear.appid+"/gearname/"+topic)
 
 def publish(topic,message):
-    microgear.pubilsh_list.append(["/"+microgear.appid+topic,message+str(int(time.time()))])
-    #client.publish("/piedemo/gearname/"+topic, "offfffffffff"+str(int(time.time())))
-def subscride(top):
-    if microgear.subscribe_list["/piedemo/gearname/"+topic]:
-       print "true" 
+    microgear.pubilsh_list.append(["/"+microgear.appid+topic,message])
+
 def setname(topic):
-    subscribe(topic)
+    microgear.gearname = topic
+    microgear.subscribe_list.append("/"+microgear.appid+"/gearname/"+topic)
 
 def chat(topic,message):
     publish("/gearname/"+topic,message)
-    
-def on(event,func=""):
-    if event == "connent":
-        func
-    if event == "message":
-        list_on_message.append(func)
-       
-    
+        
 def get_token():
     logging.info("Check stored token.")
     cached = cache.get_item("microgear.cache")
