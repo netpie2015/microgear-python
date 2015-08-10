@@ -11,7 +11,6 @@ import re
 import string
 import paho.mqtt.client as mqtt
 
-
 def create(gearkey,gearsecret, appid="", args = {}):
     if 'debugmode' in args:
        logging.basicConfig(level=logging.DEBUG,
@@ -49,23 +48,24 @@ def create(gearkey,gearsecret, appid="", args = {}):
 
 def client_on_connect(client, userdata, rc):
     print "Connected with result code "+str(rc)
-
     if rc == 0 : 
         for func in microgear.list_on_connect:
             func()
         for topic in microgear.pubilsh_list :
             client.publish(topic[0],topic[1])
+        microgear.pubilsh_list = []
         for topic in microgear.subscribe_list :
             client.subscribe(topic)
             print "Auto subscribe "+topic 
         for the_key, the_value in microgear.list_on_subscribe.iteritems():
             client.subscribe(the_key)
-        
 
 def client_on_message(client, userdata, msg):
-    #client.publish("/piedemo/gearname/htmlgear", "ok i see"+str(int(time.time())))
     if len(microgear.list_on_subscribe) > 0 :
         microgear.list_on_subscribe[msg.topic](msg.topic,str(msg.payload))
+    for topic in microgear.pubilsh_list :
+        client.publish(topic[0],topic[1])
+    microgear.pubilsh_list = []
 
 def client_on_subscribe(client, userdata, mid, granted_qos):
     pass
