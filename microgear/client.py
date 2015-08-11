@@ -141,7 +141,6 @@ def get_requesttoken(cached):
     consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
     client = oauth.Client(consumer)
     verifier = ''.join(random.sample(string.lowercase+string.digits,8))
-    print verifier
     params = {'oauth_callback': "scope=%s&appid=%s&verifier=%s" % (microgear.scope, microgear.appid, verifier)}
     resp, content = client.request(microgear.gearauthrequesttokenendpoint, "POST", body=urllib.urlencode(params))
     matchContent = re.match( r'oauth_token=(.*?)&oauth_token_secret=(.*?).*', content)
