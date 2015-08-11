@@ -103,7 +103,7 @@ microgear.chat("html","hello from python");
 ```
 
 
-<br data-effect="nomal"/>
+
 
 
 
@@ -119,7 +119,7 @@ arguments
 microgear.publish("/outdoor/temp","28.5");
 ```
 
-<br data-effect="nomal"/>
+
 
 
 **microgear.subscribe(*topic*)** microgear อาจจะมีความสนใจใน topic ใดเป็นการเฉพาะ เราสามารถใช้ฟังก์ชั่น subscribe() ในการบอกรับ message ของ topic นั้นได้
