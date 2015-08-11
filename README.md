@@ -1,5 +1,5 @@
 #Microgear-python
-=======
+-----------
 microgear- python คือ client library ภาษา Python  ที่ทำหน้าที่เป็นตัวกลางในการเชื่อมโยง application code หรือ hardware เข้ากับบริการของ netpie platform เพื่อการพัฒนา IOT application รายละเอียดเกี่ยวกับ netpie platform สามารถศึกษาได้จาก http://netpie.io
 
 
@@ -48,7 +48,7 @@ arguments
  * *gearsecret* `string` - เป็น secret ของ key ซึ่งจะใช้ประกอบในกระบวนการยืนยันตัวตน
  * *appid* `string` - กลุ่มของ application ที่ microgear จะทำการเชื่อมต่อ
 
-```python:
+```python
 microgear.create("qDDwMaHEXfBiXmL","vNoswuhfqjxWSm0GR7cycGPniekw03","piedemo")
 ```
 
@@ -60,7 +60,7 @@ microgear.create("qDDwMaHEXfBiXmL","vNoswuhfqjxWSm0GR7cycGPniekw03","piedemo")
 
 **microgear.connect():** การเชื่อมต่อ microgear
 
-```python:
+```python
 microgear.connect();
 ```
 
@@ -83,7 +83,7 @@ argument
 
 
 
-```python:
+```python
 microgear.setname("python");
 ```
 
@@ -94,7 +94,7 @@ arguments
 * *gearname* `string` - ชื่อของ microgear นี้
 * *message* `string` – ข้อความ
 
-```python:
+```python
 microgear.chat("html","hello from python");
 ```
 
@@ -111,7 +111,7 @@ arguments
 * *topic* `string` - ชื่อของ topic ที่ต้องการจะส่งข้อความไปถึง
 * *message* `string` – ข้อความ
 
-```python:
+```python
 microgear.publish("/outdoor/temp","28.5");
 ```
 
@@ -126,7 +126,7 @@ argument
 
 
 
-```python:
+```python
 microgear.subscribe("/outdoor/temp");
 ```
 
@@ -143,7 +143,7 @@ argument
 * *callback* `function` - callback function
 
 
-```python:
+```python
 def callback_connect() :
 	print “Now I am connected with netpie”
 microgear.on_ connect (callback_connect)
@@ -160,7 +160,7 @@ arguments
 * *callback* `function` - callback function
 
 
-```python:
+```python
 def callback_subscribe(topic,message) :
 	print topic+ “ “ +message
 microgear.on_subscribe(topic, callback_subscribe)
@@ -177,7 +177,7 @@ argument
 * *callback* `function` - callback function
 
 
-```python:
+```python
 def callback_disconnect() :
 	pritnt "Disconnected”
 microgear.on_ disconnect (callback_disconnect)
