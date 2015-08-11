@@ -49,7 +49,11 @@ arguments
  * *appid* `string` - กลุ่มของ application ที่ microgear จะทำการเชื่อมต่อ
 
 ```python
-microgear.create("qDDwMaHEXfBiXmL","vNoswuhfqjxWSm0GR7cycGPniekw03","piedemo")
+gearkey = <gearkey>
+gearsecret =  <gearsecret>
+appid = <appid>
+
+microgear.create(gearkey,gearsecret,appid)
 ```
 
 
@@ -130,7 +134,7 @@ argument
 microgear.subscribe("/outdoor/temp");
 ```
 
-<br data-effect="nomal"/>
+
 
 ##Event
 ---------------
@@ -149,7 +153,7 @@ def callback_connect() :
 microgear.on_ connect (callback_connect)
 ```
 
-<br data-effect="nomal"/>
+
 
 
 **microgear.on_subscribe(*topic*, *callback*)**
@@ -166,7 +170,7 @@ def callback_subscribe(topic,message) :
 microgear.on_subscribe(topic, callback_subscribe)
 ```
 
-<br data-effect="nomal"/>
+
 
 
 **microgear.on_disconnect(*callback*)**
@@ -184,4 +188,3 @@ microgear.on_ disconnect (callback_disconnect)
 
 ```
 
-<br data-effect="nomal"/>
