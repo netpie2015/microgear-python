@@ -1,17 +1,14 @@
-
-
-
 Microgear-python
 =======
 microgear- python คือ client library ภาษา Python  ที่ทำหน้าที่เป็นตัวกลางในการเชื่อมโยง application code หรือ hardware เข้ากับบริการของ netpie platform เพื่อการพัฒนา IOT application รายละเอียดเกี่ยวกับ netpie platform สามารถศึกษาได้จาก http://netpie.io
 
-<br data-effect="nomal"/>
+
 
 ##การติดตั้ง
 -----------
 pip install microgear
 
-<br data-effect="nomal"/>
+
 
 ##ตัวอย่างการเรียกใช้งาน
 -----------
@@ -39,7 +36,7 @@ microgear.on_subscribe("python",subscription)
 microgear.connect()
 ```
 
-<br data-effect="turn"/>
+
 
 ##การใช้งาน library
 ------------
@@ -55,7 +52,7 @@ arguments
 microgear.create("qDDwMaHEXfBiXmL","vNoswuhfqjxWSm0GR7cycGPniekw03","piedemo")
 ```
 
-<br data-effect="turn"/>
+
 
 
 ##Microgear
@@ -68,7 +65,7 @@ microgear.connect();
 ```
 
 
-<br data-effect="nomal"/>
+
 
 
 
@@ -80,7 +77,7 @@ argument
 * *gearname* `string` - ชื่อของ microgear นี้
 
 
-<br data-effect="nomal"/>
+
 
 
 
@@ -188,6 +185,3 @@ microgear.on_ disconnect (callback_disconnect)
 ```
 
 <br data-effect="nomal"/>
-
-
-
