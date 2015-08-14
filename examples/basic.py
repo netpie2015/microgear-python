@@ -15,8 +15,8 @@ def subscription(topic,message):
 	print topic+" "+message
 
 
-microgear.setname("python")
-microgear.on_connect(connection)
-microgear.on_subscribe("python",subscription)
+microgear.setname("python", subscription)
+microgear.on_connect = connection
+microgear.subscribe("python", subscription)
 
 microgear.connect()

@@ -29,9 +29,9 @@ def subscription(topic,message):
 	microgear.chat("htmlgear","Hello world. "+str(int(time.time())))
 	print topic+" "+message
 
-microgear.setname("python")
-microgear.on_connect(connection)
-microgear.on_subscribe("python",subscription)
+microgear.setname("python", subscription)
+microgear.on_connect = connection
+microgear.subscribe("python", subscription)
 
 microgear.connect()
 ```
@@ -74,11 +74,16 @@ microgear.connect();
 
 
 
-**microgear.setname(*gearname*):** microgear สามารถตั้งชื่อตัวเองได้ ซึ่งสามารถใช้เป็นชื่อเรียกในการใช้ฟังก์ชั่น chat()
+**microgear.setname(*gearname*, *callback*):** microgear สามารถตั้งชื่อตัวเองได้
+ซึ่งสามารถใช้เป็นชื่อเรียกในการใช้ฟังก์ชั่น chat() ซึ่งเมื่อได้รับข้อความข้อความจะถูกส่งเข้า function
+callback ที่ระบุไว้
 
 argument
 
 * *gearname* `string` - ชื่อของ microgear นี้
+* *callback* `function` - ฟังก์ชั่น ที่จะทำงานเมื่อได้รับข้อความ โดยฟังก์ชั่นนี้จะรับ parameter 2 ตัวคือ
+..* *topic* - ชื่อ topic ที่ได้รับข้อความนี้
+..* *message* - ข้อความที่ได้รับ
 
 
 
@@ -88,7 +93,9 @@ argument
 
 
 ```python
-microgear.setname("python");
+def callback(topoic, message):
+	print "Yes, I hear you."
+microgear.setname("python", callback);
 ```
 
 **microgear.chat(*gearname*, *message*):** การส่งข้อความโดยระบุ gearname และข้อความที่ต้องการส่ง
@@ -122,16 +129,23 @@ microgear.publish("/outdoor/temp","28.5");
 
 
 
-**microgear.subscribe(*topic*)** microgear อาจจะมีความสนใจใน topic ใดเป็นการเฉพาะ เราสามารถใช้ฟังก์ชั่น subscribe() ในการบอกรับ message ของ topic นั้นได้
+**microgear.subscribe(*topic*, *callback*)** microgear อาจจะมีความสนใจใน topic
+ใดเป็นการเฉพาะ เราสามารถใช้ฟังก์ชั่น subscribe() ในการบอกรับ message ของ topic นั้นได้
+ และฟังก์ชั่น callback จะถูกเรียกเมื่อได้รับข้อความ ตาม topic ที่ระบุ
 
 argument
 
 * *topic* `string` - ชื่อของ topic ที่ความสนใจ
+* *callback* `function` - ฟังก์ชั่น ที่จะทำงานเมื่อได้รับข้อความ โดยฟังก์ชั่นนี้จะรับ parameter 2 ตัวคือ
+..* *topic* - ชื่อ topic ที่ได้รับข้อความนี้
+..* *message* - ข้อความที่ได้รับ
 
 
 
 ```python
-microgear.subscribe("/outdoor/temp");
+def callback(topic, message):
+	print "I got it: "+ message
+microgear.subscribe("/outdoor/temp", callback);
 ```
 
 
@@ -140,42 +154,25 @@ microgear.subscribe("/outdoor/temp");
 ---------------
 application ที่รันบน microgear จะมีการทำงานในแบบ event driven คือเป็นการทำงานตอบสนองต่อ event ต่างๆ ด้วยการเขียน callback function ขึ้นมารองรับในลักษณะๆดังต่อไปนี้
 
-**microgear.on_connect(*callback*)**
+**microgear.on_connect**  เกิดขึ้นเมื่อ microgear library เชื่อมต่อกับ platform สำเร็จ
 
-argument
+ค่าที่ set
 
-* *callback* `function` - callback function
+* *callback* `function` - ฟังก์ชั่นที่จะทำงาน เมื่อมีการ connect
 
 
 ```python
 def callback_connect() :
-	print “Now I am connected with netpie”
-microgear.on_ connect (callback_connect)
+	print "Now I am connected with netpie"
+microgear.on_ connect = callback_connect
 ```
 
 
 
 
-**microgear.on_subscribe(*topic*, *callback*)**
+**microgear.on_disconnect** เกิดขึ้นเมื่อ microgear library ตัดการเชื่อมต่อกับ platform
 
-arguments
-
-* *topic* `string` - ชื่อของ topic ที่ความสนใจ
-* *callback* `function` - callback function
-
-
-```python
-def callback_subscribe(topic,message) :
-	print topic+ “ “ +message
-microgear.on_subscribe(topic, callback_subscribe)
-```
-
-
-
-
-**microgear.on_disconnect(*callback*)**
-
-argument
+ค่าที่ set
 
 
 * *callback* `function` - callback function
@@ -184,7 +181,44 @@ argument
 ```python
 def callback_disconnect() :
 	pritnt "Disconnected”
-microgear.on_ disconnect (callback_disconnect)
+microgear.on_disconnect = callback_disconnect
 
 ```
 
+
+
+
+**microgear.on_present** event นี้จะเกิดขึ้นเมื่อมี microgear ใน appid เดียวกัน online เข้ามาเชื่อมต่อ netpie
+
+ค่าที่ set
+
+
+* *callback* `function` - จะทำงานเมื่อเกิดเหตุการณ์นี้ โดยจะรับค่า parameter คือ
+..* gearkey - ระบุค่าของ gearkey ที่เกี่ยวข้องกับเหตุการณ์นี้
+
+
+```python
+def callback_present(gearkey) :
+	pritnt gearkey+" become online."
+microgear.on_present = callback_present
+
+```
+
+
+
+
+**microgear.on_present** event นี้จะเกิดขึ้นเมื่อมี microgear ใน appid เดียวกัน offline หายไป
+
+ค่าที่ set
+
+
+* *callback* `function` - จะทำงานเมื่อเกิดเหตุการณ์นี้ โดยจะรับค่า parameter คือ
+..* gearkey - ระบุค่าของ gearkey ที่เกี่ยวข้องกับเหตุการณ์นี้
+
+
+```python
+def callback_absent(gearkey) :
+	pritnt gearkey+" become offline."
+microgear.on_absent = callback_absent
+
+```

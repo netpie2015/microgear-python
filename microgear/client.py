@@ -11,6 +11,9 @@ import re
 import string
 import paho.mqtt.client as mqtt
 
+def do_nothing(args=None):
+    pass
+
 def create(gearkey,gearsecret, appid="", args = {}):
     if 'debugmode' in args:
        logging.basicConfig(level=logging.DEBUG,
@@ -43,37 +46,45 @@ def create(gearkey,gearsecret, appid="", args = {}):
     microgear.list_on_subscribe = {}
     microgear.pubilsh_list = []
     microgear.list_on_message = []
-    microgear.list_on_connect = []
-    microgear.list_on_disconnect = []
+    microgear.on_connect = do_nothing
+    microgear.on_disconnect = do_nothing
+    microgear.on_present = do_nothing
+    microgear.on_absent = do_nothing
 
 def client_on_connect(client, userdata, rc):
-    print "Connected with result code "+str(rc)
+    logging.info("Connected with result code "+str(rc))
     if rc == 0 : 
-        for func in microgear.list_on_connect:
-            func()
+        mircrogear.on_connect()
         for topic in microgear.pubilsh_list :
             client.publish(topic[0],topic[1])
         microgear.pubilsh_list = []
         for topic in microgear.subscribe_list :
             client.subscribe(topic)
-            print "Auto subscribe "+topic 
-        for the_key, the_value in microgear.list_on_subscribe.iteritems():
-            client.subscribe(the_key)
+            logging.debug("Auto subscribe "+topic )
+        microgear.subscribe_list = []
 
 def client_on_message(client, userdata, msg):
-    if len(microgear.list_on_subscribe) > 0 :
+    topics = msg.topic.split("/")
+    if topics[1] == "@present":
+        microgear.on_present(str(msg.payload))
+    elif topics[1] == "@absent":
+        microgear.on_absent(str(msg.payload))
+    if len(microgear.list_on_subscribe) > 0 and msg.topic in microgear.list_on_subscribe:
         microgear.list_on_subscribe[msg.topic](msg.topic,str(msg.payload))
+    for topic in microgear.subscribe_list:
+        client.subscribe(topic)
     for topic in microgear.pubilsh_list :
         client.publish(topic[0],topic[1])
     microgear.pubilsh_list = []
+    microgear.subscribe_list = []
 
 def client_on_subscribe(client, userdata, mid, granted_qos):
+    ## TODO: Check subscribe fail 
     pass
     
 def client_on_disconnect(client, userdata, rc):
-    for func in microgear.list_on_disconnect:
-        func()
-    print "Diconnected with result code "+str(rc)
+    microgear.on_disconnect()
+    logging.info("Diconnected with result code "+str(rc))
 
 def connect():
     times = 1
@@ -96,25 +107,18 @@ def connect():
     
     mqtt_client.loop_forever()
 
-
-def on_subscribe(topic,func):
-    microgear.list_on_subscribe["/piedemo/gearname/"+topic]=func
-
-def on_connect(func):
-    microgear.list_on_connect.append(func)
-
-def on_disconnect(func):
-    microgear.list_on_disconnect.append(func)
-
-def subscride(topic):
-    microgear.subscribe_list.append("/"+microgear.appid+"/gearname/"+topic)
+def subscribe(topic,func):
+    topic = "/"+microgear.appid+topic 
+    if not topic in microgear.list_on_subscribe:
+        microgear.subscribe_list.append(topic)
+    microgear.list_on_subscribe[topic]=func
 
 def publish(topic,message):
     microgear.pubilsh_list.append(["/"+microgear.appid+topic,message])
 
-def setname(topic):
+def setname(topic, func):
     microgear.gearname = topic
-    microgear.subscribe_list.append("/"+microgear.appid+"/gearname/"+topic)
+    subscribe("/gearname/"+topic, func)
 
 def chat(topic,message):
     publish("/gearname/"+topic,message)
@@ -180,7 +184,6 @@ def get_accesstoken(cached):
         microgear.accesstoken = cached["accesstoken"]
     else:
         logging.warning("Access token is not issued, please check your consumerkey and consumersecret.")
-
 
 def hmac(key, message):
     import base64
