@@ -54,7 +54,7 @@ def create(gearkey,gearsecret, appid="", args = {}):
 def client_on_connect(client, userdata, rc):
     logging.info("Connected with result code "+str(rc))
     if rc == 0 : 
-        mircrogear.on_connect()
+        microgear.on_connect()
         for topic in microgear.pubilsh_list :
             client.publish(topic[0],topic[1])
         microgear.pubilsh_list = []

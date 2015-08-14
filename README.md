@@ -26,12 +26,13 @@ def connection():
 	print "Now I am connected with netpie"
 
 def subscription(topic,message):
-	microgear.chat("htmlgear","Hello world. "+str(int(time.time())))
+	microgear.chat("nobita","Hello world. "+str(int(time.time())))
 	print topic+" "+message
 
-microgear.setname("python", subscription)
+
+microgear.setname("doraemon", subscription)
 microgear.on_connect = connection
-microgear.subscribe("python", subscription)
+microgear.subscribe("/mails", subscription)
 
 microgear.connect()
 ```
@@ -82,8 +83,8 @@ argument
 
 * *gearname* `string` - ชื่อของ microgear นี้
 * *callback* `function` - ฟังก์ชั่น ที่จะทำงานเมื่อได้รับข้อความ โดยฟังก์ชั่นนี้จะรับ parameter 2 ตัวคือ
-..* *topic* - ชื่อ topic ที่ได้รับข้อความนี้
-..* *message* - ข้อความที่ได้รับ
+    * *topic* - ชื่อ topic ที่ได้รับข้อความนี้
+    * *message* - ข้อความที่ได้รับ
 
 
 
@@ -137,8 +138,8 @@ argument
 
 * *topic* `string` - ชื่อของ topic ที่ความสนใจ
 * *callback* `function` - ฟังก์ชั่น ที่จะทำงานเมื่อได้รับข้อความ โดยฟังก์ชั่นนี้จะรับ parameter 2 ตัวคือ
-..* *topic* - ชื่อ topic ที่ได้รับข้อความนี้
-..* *message* - ข้อความที่ได้รับ
+    * *topic* - ชื่อ topic ที่ได้รับข้อความนี้
+    * *message* - ข้อความที่ได้รับ
 
 
 
@@ -194,7 +195,7 @@ microgear.on_disconnect = callback_disconnect
 
 
 * *callback* `function` - จะทำงานเมื่อเกิดเหตุการณ์นี้ โดยจะรับค่า parameter คือ
-..* gearkey - ระบุค่าของ gearkey ที่เกี่ยวข้องกับเหตุการณ์นี้
+     * *gearkey* - ระบุค่าของ gearkey ที่เกี่ยวข้องกับเหตุการณ์นี้
 
 
 ```python
@@ -213,7 +214,7 @@ microgear.on_present = callback_present
 
 
 * *callback* `function` - จะทำงานเมื่อเกิดเหตุการณ์นี้ โดยจะรับค่า parameter คือ
-..* gearkey - ระบุค่าของ gearkey ที่เกี่ยวข้องกับเหตุการณ์นี้
+    * *gearkey* - ระบุค่าของ gearkey ที่เกี่ยวข้องกับเหตุการณ์นี้
 
 
 ```python

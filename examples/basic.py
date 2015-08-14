@@ -11,12 +11,12 @@ def connection():
 	print "Now I am connected with netpie"
 
 def subscription(topic,message):
-	microgear.chat("htmlgear","Hello world. "+str(int(time.time())))
+	microgear.chat("nobita","Hello world. "+str(int(time.time())))
 	print topic+" "+message
 
 
-microgear.setname("python", subscription)
+microgear.setname("doraemon", subscription)
 microgear.on_connect = connection
-microgear.subscribe("python", subscription)
+microgear.subscribe("/mails", subscription)
 
 microgear.connect()

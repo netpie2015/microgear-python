@@ -2,12 +2,11 @@ from distutils.core import setup
 setup(
   name = 'microgear',
   packages = ['microgear'], # this must be the same as the name above
-  version = '1.0.0',
+  version = '1.0.1',
   description = 'Client library of Python, connect application code or hardware to netpie platform.',
-  author = 'nectec',
-  author_email = 'info@nectec.or.th',
-  url = 'https://bitbucket.org/ridnarong/microgear-python', # use the URL to the github repo
-  download_url = 'https://4ARMER@bitbucket.org/ridnarong/microgear-python.git', # I'll explain this in a second
+  author = 'Chaiwith Santaweesuk',
+  author_email = 'developer@netpie.io',
+  url = 'https://github.com/netpieio/microgear-python', # use the URL to the github repo
   keywords = [], # arbitrary keywords
   classifiers = [],
   install_requires=['paho-mqtt','oauth2'],
