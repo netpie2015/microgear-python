@@ -154,7 +154,7 @@ microgear.subscribe("/outdoor/temp", callback);
 ---------------
 application ที่รันบน microgear จะมีการทำงานในแบบ event driven คือเป็นการทำงานตอบสนองต่อ event ต่างๆ ด้วยการเขียน callback function ขึ้นมารองรับในลักษณะๆดังต่อไปนี้
 
-**microgear.on_connect**  เกิดขึ้นเมื่อ microgear library เชื่อมต่อกับ platform สำเร็จ
+**client.on_connect**  เกิดขึ้นเมื่อ microgear library เชื่อมต่อกับ platform สำเร็จ
 
 ค่าที่ set
 
@@ -164,13 +164,13 @@ application ที่รันบน microgear จะมีการทำงา
 ```python
 def callback_connect() :
 	print "Now I am connected with netpie"
-microgear.on_ connect = callback_connect
+client.on_ connect = callback_connect
 ```
 
 
 
 
-**microgear.on_disconnect** เกิดขึ้นเมื่อ microgear library ตัดการเชื่อมต่อกับ platform
+**client.on_disconnect** เกิดขึ้นเมื่อ microgear library ตัดการเชื่อมต่อกับ platform
 
 ค่าที่ set
 
@@ -181,14 +181,14 @@ microgear.on_ connect = callback_connect
 ```python
 def callback_disconnect() :
 	pritnt "Disconnected”
-microgear.on_disconnect = callback_disconnect
+client.on_disconnect = callback_disconnect
 
 ```
 
 
 
 
-**microgear.on_present** event นี้จะเกิดขึ้นเมื่อมี microgear ใน appid เดียวกัน online เข้ามาเชื่อมต่อ netpie
+**client.on_present** event นี้จะเกิดขึ้นเมื่อมี microgear ใน appid เดียวกัน online เข้ามาเชื่อมต่อ netpie
 
 ค่าที่ set
 
@@ -200,14 +200,14 @@ microgear.on_disconnect = callback_disconnect
 ```python
 def callback_present(gearkey) :
 	pritnt gearkey+" become online."
-microgear.on_present = callback_present
+client.on_present = callback_present
 
 ```
 
 
 
 
-**microgear.on_present** event นี้จะเกิดขึ้นเมื่อมี microgear ใน appid เดียวกัน offline หายไป
+**client.on_present** event นี้จะเกิดขึ้นเมื่อมี microgear ใน appid เดียวกัน offline หายไป
 
 ค่าที่ set
 
@@ -219,6 +219,6 @@ microgear.on_present = callback_present
 ```python
 def callback_absent(gearkey) :
 	pritnt gearkey+" become offline."
-microgear.on_absent = callback_absent
+client.on_absent = callback_absent
 
 ```
