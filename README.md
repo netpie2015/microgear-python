@@ -29,9 +29,10 @@ def subscription(topic,message):
 	client.chat("nobita","Hello world. "+str(int(time.time())))
 	print topic+" "+message
 
-client.setname("doraemon", subscription)
+client.setname("doraemon")
 client.on_connect = connection
-client.subscribe("/mails", subscription)
+client.on_message = subscription
+client.subscribe("/mails")
 
 client.connect()
 ```
@@ -74,28 +75,17 @@ microgear.connect();
 
 
 
-**microgear.setname(*gearname*, *callback*):** microgear สามารถตั้งชื่อตัวเองได้
-ซึ่งสามารถใช้เป็นชื่อเรียกในการใช้ฟังก์ชั่น chat() ซึ่งเมื่อได้รับข้อความข้อความจะถูกส่งเข้า function
-callback ที่ระบุไว้
+**microgear.setname(*gearname*):** microgear สามารถตั้งชื่อตัวเองได้
+ซึ่งสามารถใช้เป็นชื่อเรียกในการใช้ฟังก์ชั่น chat()
 
 argument
 
 * *gearname* `string` - ชื่อของ microgear นี้
-* *callback* `function` - ฟังก์ชั่น ที่จะทำงานเมื่อได้รับข้อความ โดยฟังก์ชั่นนี้จะรับ parameter 2 ตัวคือ
-    * *topic* - ชื่อ topic ที่ได้รับข้อความนี้
-    * *message* - ข้อความที่ได้รับ
-
-
-
-
-
 
 
 
 ```python
-def callback(topoic, message):
-	print "Yes, I hear you."
-microgear.setname("python", callback);
+microgear.setname("python");
 ```
 
 **microgear.chat(*gearname*, *message*):** การส่งข้อความโดยระบุ gearname และข้อความที่ต้องการส่ง
@@ -129,23 +119,17 @@ microgear.publish("/outdoor/temp","28.5");
 
 
 
-**microgear.subscribe(*topic*, *callback*)** microgear อาจจะมีความสนใจใน topic
+**microgear.subscribe(*topic*)** microgear อาจจะมีความสนใจใน topic
 ใดเป็นการเฉพาะ เราสามารถใช้ฟังก์ชั่น subscribe() ในการบอกรับ message ของ topic นั้นได้
- และฟังก์ชั่น callback จะถูกเรียกเมื่อได้รับข้อความ ตาม topic ที่ระบุ
 
 argument
 
 * *topic* `string` - ชื่อของ topic ที่ความสนใจ
-* *callback* `function` - ฟังก์ชั่น ที่จะทำงานเมื่อได้รับข้อความ โดยฟังก์ชั่นนี้จะรับ parameter 2 ตัวคือ
-    * *topic* - ชื่อ topic ที่ได้รับข้อความนี้
-    * *message* - ข้อความที่ได้รับ
 
 
 
 ```python
-def callback(topic, message):
-	print "I got it: "+ message
-microgear.subscribe("/outdoor/temp", callback);
+microgear.subscribe("/outdoor/temp");
 ```
 
 
@@ -186,6 +170,22 @@ client.on_disconnect = callback_disconnect
 ```
 
 
+
+
+**client.on_message** เกิดขึ้นเมื่อ ได้รับข้อความจากการ chat หรือ หัวข้อที่ subscribe
+
+ค่าที่ set
+* *callback* `function` - ฟังก์ชั่น ที่จะทำงานเมื่อได้รับข้อความ โดยฟังก์ชั่นนี้จะรับ parameter 2 ตัวคือ
+    * *topic* - ชื่อ topic ที่ได้รับข้อความนี้
+    * *message* - ข้อความที่ได้รับ
+
+
+```python
+def callback_message(topic, message) :
+  pritnt "I got message from ", topic, ": ", message
+client.on_disconnect = callback_message
+
+```
 
 
 **client.on_present** event นี้จะเกิดขึ้นเมื่อมี microgear ใน appid เดียวกัน online เข้ามาเชื่อมต่อ netpie

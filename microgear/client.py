@@ -12,18 +12,17 @@ import string
 import paho.mqtt.client as mqtt
 
 
-def do_nothing(args=None):
+def do_nothing(arg1=None, arg2=None):
     pass
 
 
 subscribe_list = []
-list_on_subscribe = {}
 pubilsh_list = []
 on_disconnect = do_nothing
 on_present = do_nothing
 on_absent = do_nothing
 on_connect = do_nothing
-
+on_message = do_nothing
 
 def create(gearkey,gearsecret, appid="", args = {}):
     if 'debugmode' in args:
@@ -59,14 +58,13 @@ def client_on_connect(client, userdata, rc):
 def client_on_message(client, userdata, msg):
     global pubilsh_list
     global subscribe_list
-    global list_on_subscribe
     topics = msg.topic.split("/")
     if topics[1] == "@present":
         on_present(str(msg.payload))
     elif topics[1] == "@absent":
         on_absent(str(msg.payload))
-    if len(list_on_subscribe) > 0 and msg.topic in list_on_subscribe:
-        list_on_subscribe[msg.topic](msg.topic,str(msg.payload))
+    elif:
+        on_message(msg.topic,str(msg.payload))
     for topic in subscribe_list:
         client.subscribe(topic)
     for topic in pubilsh_list :
@@ -103,21 +101,19 @@ def connect():
     
     mqtt_client.loop_forever()
 
-def subscribe(topic,func):
+def subscribe(topic):
     global subscribe_list
-    global list_on_subscribe
     topic = "/"+microgear.appid+topic 
     if not topic in list_on_subscribe:
         subscribe_list.append(topic)
-    list_on_subscribe[topic]=func
 
 def publish(topic,message):
     global pubilsh_list
     pubilsh_list.append(["/"+microgear.appid+topic,message])
 
-def setname(topic, func):
+def setname(topic):
     microgear.gearname = topic
-    subscribe("/gearname/"+topic, func)
+    subscribe("/gearname/"+topic)
 
 def chat(topic,message):
     publish("/gearname/"+topic,message)
