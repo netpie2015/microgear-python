@@ -164,7 +164,7 @@ client.on_ connect = callback_connect
 
 ```python
 def callback_disconnect() :
-	pritnt "Disconnected”
+	print "Disconnected”
 client.on_disconnect = callback_disconnect
 
 ```
@@ -182,8 +182,8 @@ client.on_disconnect = callback_disconnect
 
 ```python
 def callback_message(topic, message) :
-  pritnt "I got message from ", topic, ": ", message
-client.on_disconnect = callback_message
+  print "I got message from ", topic, ": ", message
+client.on_message= callback_message
 
 ```
 
@@ -199,7 +199,7 @@ client.on_disconnect = callback_message
 
 ```python
 def callback_present(gearkey) :
-	pritnt gearkey+" become online."
+	print gearkey+" become online."
 client.on_present = callback_present
 
 ```
@@ -218,7 +218,7 @@ client.on_present = callback_present
 
 ```python
 def callback_absent(gearkey) :
-	pritnt gearkey+" become offline."
+	print gearkey+" become offline."
 client.on_absent = callback_absent
 
 ```

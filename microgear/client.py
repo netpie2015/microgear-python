@@ -63,7 +63,7 @@ def client_on_message(client, userdata, msg):
         on_present(str(msg.payload))
     elif topics[1] == "@absent":
         on_absent(str(msg.payload))
-    elif:
+    else:
         on_message(msg.topic,str(msg.payload))
     for topic in subscribe_list:
         client.subscribe(topic)
@@ -104,8 +104,7 @@ def connect():
 def subscribe(topic):
     global subscribe_list
     topic = "/"+microgear.appid+topic 
-    if not topic in list_on_subscribe:
-        subscribe_list.append(topic)
+    subscribe_list.append(topic)
 
 def publish(topic,message):
     global pubilsh_list
