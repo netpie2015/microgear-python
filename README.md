@@ -20,7 +20,7 @@ gearkey = <gearkey>
 gearsecret =  <gearsecret>
 appid = <appid>
 
-microgear.create(gearkey,gearsecret,appid,{'debugmode': True})
+client.create(gearkey,gearsecret,appid,{'debugmode': True})
 
 def connection():
 	print "Now I am connected with netpie"
@@ -41,7 +41,7 @@ client.connect()
 
 ##การใช้งาน library
 ------------
-**microgear.create(*gearkey*,*gearsecret*,*appid*):**
+**client.create(*gearkey*,*gearsecret*,*appid*):**
 
 arguments
 
@@ -54,7 +54,7 @@ gearkey = <gearkey>
 gearsecret =  <gearsecret>
 appid = <appid>
 
-microgear.create(gearkey,gearsecret,appid)
+client.create(gearkey,gearsecret,appid)
 ```
 
 
@@ -63,10 +63,10 @@ microgear.create(gearkey,gearsecret,appid)
 ##Microgear
 ---------------
 
-**microgear.connect():** การเชื่อมต่อ microgear
+**client.connect():** การเชื่อมต่อ microgear
 
 ```python
-microgear.connect();
+client.connect();
 ```
 
 
@@ -75,7 +75,7 @@ microgear.connect();
 
 
 
-**microgear.setname(*gearname*):** microgear สามารถตั้งชื่อตัวเองได้
+**client.setname(*gearname*):** microgear สามารถตั้งชื่อตัวเองได้
 ซึ่งสามารถใช้เป็นชื่อเรียกในการใช้ฟังก์ชั่น chat()
 
 argument
@@ -85,10 +85,10 @@ argument
 
 
 ```python
-microgear.setname("python");
+client.setname("python");
 ```
 
-**microgear.chat(*gearname*, *message*):** การส่งข้อความโดยระบุ gearname และข้อความที่ต้องการส่ง
+**client.chat(*gearname*, *message*):** การส่งข้อความโดยระบุ gearname และข้อความที่ต้องการส่ง
 
 arguments
 
@@ -96,7 +96,7 @@ arguments
 * *message* `string` – ข้อความ
 
 ```python
-microgear.chat("html","hello from python");
+client.chat("html","hello from python");
 ```
 
 
@@ -105,7 +105,7 @@ microgear.chat("html","hello from python");
 
 
 
-**microgear.publish(*topic*, *message*):** ในกรณีที่ต้องการส่งข้อความแบบไม่เจาะจงผู้รับ สามารถใช้ฟังชั่น publish ไปยัง topic ที่กำหนดได้ ซึ่งจะมีแต่ microgear ที่ subscribe topoic นี้เท่านั้น ที่จะได้รับข้อความ
+**client.publish(*topic*, *message*):** ในกรณีที่ต้องการส่งข้อความแบบไม่เจาะจงผู้รับ สามารถใช้ฟังชั่น publish ไปยัง topic ที่กำหนดได้ ซึ่งจะมีแต่ microgear ที่ subscribe topoic นี้เท่านั้น ที่จะได้รับข้อความ
 
 arguments
 
@@ -113,13 +113,13 @@ arguments
 * *message* `string` – ข้อความ
 
 ```python
-microgear.publish("/outdoor/temp","28.5");
+client.publish("/outdoor/temp","28.5");
 ```
 
 
 
 
-**microgear.subscribe(*topic*)** microgear อาจจะมีความสนใจใน topic
+**client.subscribe(*topic*)** microgear อาจจะมีความสนใจใน topic
 ใดเป็นการเฉพาะ เราสามารถใช้ฟังก์ชั่น subscribe() ในการบอกรับ message ของ topic นั้นได้
 
 argument
@@ -129,7 +129,7 @@ argument
 
 
 ```python
-microgear.subscribe("/outdoor/temp");
+client.subscribe("/outdoor/temp");
 ```
 
 

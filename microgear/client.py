@@ -45,23 +45,23 @@ def client_on_connect(client, userdata, rc):
     global pubilsh_list
     global subscribe_list
     logging.debug("Connected with result code "+str(rc))
-    if rc == 0 : 
+    if rc == 0 :
         on_connect()
-        for topic in pubilsh_list :
-            client.publish(topic[0],topic[1])
-        pubilsh_list = []
         for topic in subscribe_list :
             client.subscribe(topic)
             logging.debug("Auto subscribe "+topic )
         subscribe_list = []
+        for topic in pubilsh_list :
+            client.publish(topic[0],topic[1])
+        pubilsh_list = []
 
 def client_on_message(client, userdata, msg):
     global pubilsh_list
     global subscribe_list
     topics = msg.topic.split("/")
-    if topics[1] == "@present":
+    if topics[1] == "&present":
         on_present(str(msg.payload))
-    elif topics[1] == "@absent":
+    elif topics[1] == "&absent":
         on_absent(str(msg.payload))
     else:
         on_message(msg.topic,str(msg.payload))
@@ -73,14 +73,15 @@ def client_on_message(client, userdata, msg):
     subscribe_list = []
 
 def client_on_subscribe(client, userdata, mid, granted_qos):
-    ## TODO: Check subscribe fail 
+    ## TODO: Check subscribe fail
     pass
-    
+
 def client_on_disconnect(client, userdata, rc):
     on_disconnect()
     logging.debug("Diconnected with result code "+str(rc))
 
 def connect():
+    global subscribe_list
     times = 1
     while not microgear.accesstoken:
         get_token()
@@ -88,6 +89,7 @@ def connect():
         times = times+1
 
     mqtt_client = mqtt.Client(microgear.accesstoken["token"])
+    subscribe_list.append('/&id/'+microgear.accesstoken["token"]+'/#')
     endpoint = microgear.accesstoken["endpoint"].split("//")[1].split(":")
     username = microgear.gearkey+"%"+str(int(time.time()))
     password = hmac(microgear.accesstoken["secret"]+"&"+microgear.gearsecret,microgear.accesstoken["token"]+"%"+username)
@@ -98,12 +100,12 @@ def connect():
     mqtt_client.on_message = client_on_message
     mqtt_client.on_subscribe = client_on_subscribe
     mqtt_client.on_disconnect = client_on_disconnect
-    
+
     mqtt_client.loop_forever()
 
 def subscribe(topic):
     global subscribe_list
-    topic = "/"+microgear.appid+topic 
+    topic = "/"+microgear.appid+topic
     subscribe_list.append(topic)
 
 def publish(topic,message):
@@ -116,13 +118,19 @@ def setname(topic):
 
 def chat(topic,message):
     publish("/gearname/"+topic,message)
-        
+
+def readstream(stream, filter):
+    publish('/@readstream/'+stream,'{"filter":"'+filter+'"}')
+
+def writestream(stream,data):
+    publish('/@writestream/'+stream,'{"data":'+data+'}')
+
 def get_token():
     logging.debug("Check stored token.")
     cached = cache.get_item("microgear.cache")
     if not cached:
         cached = cache.set_item("microgear.cache", {})
-        microgear.accesstoken = cached.get('accesstoken') 
+        microgear.accesstoken = cached.get('accesstoken')
     if microgear.accesstoken:
         endpoint = urlparse(accesstoken.get("endpoint"))
         microgear.gearexaddress = endpoint.host
@@ -172,7 +180,7 @@ def get_accesstoken(cached):
         cached["accesstoken"] = {
         "token": contents[1].split("=")[1],
         "secret": contents[2].split("=")[1],
-        "endpoint": urllib.unquote(contents[0].split("=")[1]).decode('utf8') 
+        "endpoint": urllib.unquote(contents[0].split("=")[1]).decode('utf8')
         }
         cache.set_item("microgear.cache", cached)
         microgear.accesstoken = cached["accesstoken"]

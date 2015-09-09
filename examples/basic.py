@@ -5,7 +5,7 @@ gearkey = <gearkey>
 gearsecret =  <gearsecret>
 appid = <appid>
 
-microgear.create(gearkey,gearsecret,appid,{'debugmode': True})
+client.create(gearkey,gearsecret,appid,{'debugmode': True})
 
 def connection():
 	print "Now I am connected with netpie"
