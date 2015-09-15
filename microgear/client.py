@@ -36,6 +36,9 @@ def create(gearkey,gearsecret, appid="", args = {}):
                         datefmt='%d/%m/%Y %I:%M:%S %p',
                         )
 
+    if 'scope' in args:
+        microgear.scope = args['scope'];
+
     microgear.gearkey = gearkey
     microgear.gearsecret = gearsecret
 
