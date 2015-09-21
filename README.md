@@ -223,3 +223,35 @@ def callback_absent(gearkey) :
 client.on_absent = callback_absent
 
 ```
+
+**client.on_reject** event นี้จะเกิดขึ้นเมื่อมี key ของ microgear ถูก reject
+
+ค่าที่ set
+
+
+* *callback* `function` - จะทำงานเมื่อเกิดเหตุการณ์นี้ โดยจะรับค่า parameter คือ
+    * *msg* - ระบุ status ที่เกี่ยวข้องกับเหตุการณ์นี้
+
+
+```python
+def callback_reject(msg) :
+	print msg
+client.on_reject = callback_reject
+
+```
+
+**client.on_error** event นี้จะเกิดขึ้นเมื่อมี error
+
+ค่าที่ set
+
+
+* *callback* `function` - จะทำงานเมื่อเกิดเหตุการณ์นี้ โดยจะรับค่า parameter คือ
+    * *msg* - ระบุ error ที่เกี่ยวข้องกับเหตุการณ์นี้
+
+
+```python
+def callback_error(msg) :
+	print msg
+client.on_error = callback_error
+
+```
