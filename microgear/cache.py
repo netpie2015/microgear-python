@@ -14,5 +14,5 @@ def set_item(key,value):
     return value
 
 def delete_item(key):
-	if os.path.isfile(key):
+	if os.path.isfile(os.path.join(os.getcwd(),key)):
 		os.remove(key)

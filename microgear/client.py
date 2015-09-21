@@ -42,7 +42,8 @@ def create(gearkey,gearsecret, appid="", args = {}):
         if matchScope:
             microgear.scope = args["scope"]
         else:
-            on_error("microgear cannot connect, scope not invalid.")
+            microgear.scope = ""
+            logging.warning("Specify scope is not valid")
         
     microgear.gearkey = gearkey
     microgear.gearsecret = gearsecret
@@ -60,26 +61,33 @@ def client_on_connect(client, userdata, rc):
                 logging.debug("Auto subscribe "+topic )
             subscribe_list = []
         else:
-            on_error("microgear is disconnected, cannot subscribe.")
-        
+            on_error("Microgear currently is not available.")
+            logging.error("Microgear currently is not available.")
         if(microgear.mqtt_client):
             for topic in pubilsh_list :
                 client.publish(topic[0],topic[1])
             pubilsh_list = []
         else:
-            on_error("microgear is disconnected, cannot publish.")
+            on_error("Microgear currently is not available.")
+            logging.error("Microgear currently is not available.")
     elif rc == 1 :
-        on_reject("microgear is disconnected, incorrect protocol version.")
+        on_reject("Incorrect protocol version.")
+        logging.warning("Incorrect protocol version.")
     elif rc == 2 :
-        on_reject("microgear is disconnected, invalid client identifier.")
+        on_reject("Invalid client identifier.")
+        logging.warning("Invalid client identifier.")
     elif rc == 3 :
-        on_reject("microgear is disconnected, server unavailable.")
+        on_reject("Server unavailable.")
+        logging.warning("Server unavailable.")
     elif rc == 4 :
-        on_reject("microgear is disconnected, bad username or password.")
+        on_reject("Bad username or password.")
+        logging.warning("Bad username or password.")
     elif rc == 5 :
-        on_reject("microgear is disconnected, not authorised.")
+        on_reject("Not authorised.")
+        logging.warning("Not authorised.")
     else:
-        on_reject("microgear is disconnected, Currently unused.")
+        on_reject("Unknown reason")
+        logging.warning("Unknown reason")
 
         
 def client_on_message(client, userdata, msg):
@@ -98,14 +106,16 @@ def client_on_message(client, userdata, msg):
             logging.debug("Auto subscribe "+topic )
         subscribe_list = []
     else:
-        on_error("microgear is disconnected, cannot subscribe.")
+        on_error("Microgear currently is not available.")
+        logging.error("Microgear currently is not available.")
         
     if(microgear.mqtt_client):
         for topic in pubilsh_list :
             client.publish(topic[0],topic[1])
         pubilsh_list = []
     else:
-        on_error("microgear is disconnected, cannot publish.")
+        on_error("Microgear currently is not available.")
+        logging.error("Microgear currently is not available.")
         
 
 def client_on_subscribe(client, userdata, mid, granted_qos):
@@ -206,6 +216,7 @@ def get_requesttoken(cached):
     else:
         #logging.warning("Request token is not issued, please check your appkey and appsecret.")
         on_error("Request token is not issued, please check your appkey and appsecret.")
+        logging.error("Request token is not issued, please check your appkey and appsecret.")
 
 def get_accesstoken(cached):
     microgear.requesttoken = cached.get("requesttoken")
@@ -231,6 +242,7 @@ def get_accesstoken(cached):
     else:
         #logging.warning("Access token is not issued, please check your consumerkey and consumersecret.")
         on_error("Access token is not issued, please check your consumerkey and consumersecret.")
+        logging.error("Access token is not issued, please check your consumerkey and consumersecret.")
 
 def hmac(key, message):
     import base64
