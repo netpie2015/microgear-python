@@ -12,3 +12,7 @@ def get_item(key):
 def set_item(key,value):
     open(os.path.join(os.getcwd(),key), "wb").write(json.dumps({"_": value}))
     return value
+
+def delete_item(key):
+	if os.path.isfile(key):
+		os.remove(key)
