@@ -1,10 +1,14 @@
 import logging
-from urlparse import urlparse
 import json
 import oauth2 as oauth
 import microgear
-import cache
-import urllib
+from microgear import cache
+try:
+    from urllib.parse import urlencode
+    from urllib.parse import unquote
+except ImportError:
+    from urllib import urlencode
+    from urllib import unquote
 import random
 import time
 import re
@@ -44,7 +48,7 @@ def create(gearkey,gearsecret, appid="", args = {}):
         else:
             microgear.scope = ""
             logging.warning("Specify scope is not valid")
-        
+
     microgear.gearkey = gearkey
     microgear.gearsecret = gearsecret
     microgear.appid = appid
@@ -89,7 +93,7 @@ def client_on_connect(client, userdata, rc):
         on_reject("Unknown reason")
         logging.warning("Unknown reason")
 
-        
+
 def client_on_message(client, userdata, msg):
     global pubilsh_list
     global subscribe_list
@@ -108,7 +112,7 @@ def client_on_message(client, userdata, msg):
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
-        
+
     if(microgear.mqtt_client):
         for topic in pubilsh_list :
             client.publish(topic[0],topic[1])
@@ -116,7 +120,7 @@ def client_on_message(client, userdata, msg):
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
-        
+
 
 def client_on_subscribe(client, userdata, mid, granted_qos):
     ## TODO: Check subscribe fail
@@ -133,9 +137,8 @@ def connect():
         get_token()
         time.sleep(times)
         times = times+1
-
     microgear.mqtt_client = mqtt.Client(microgear.accesstoken["token"])
-    subscribe_list.append('/&id/'+microgear.accesstoken["token"]+'/#')
+    subscribe_list.append('/&id/'+str(microgear.accesstoken["token"])+'/#')
     endpoint = microgear.accesstoken["endpoint"].split("//")[1].split(":")
     username = microgear.gearkey+"%"+str(int(time.time()))
     password = hmac(microgear.accesstoken["secret"]+"&"+microgear.gearsecret,microgear.accesstoken["token"]+"%"+username)
@@ -177,31 +180,30 @@ def writestream(stream,data):
 def get_token():
     logging.debug("Check stored token.")
     cached = cache.get_item("microgear.cache")
-    if not cached:
+    if cached == None:
         cached = cache.set_item("microgear.cache", {})
     else:
-        microgear.accesstoken = cached["accesstoken"]
-        for x,y in microgear.accesstoken.items():
-            microgear.accesstoken[x] = str(y)
-
-    if microgear.accesstoken:
-        endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
-        microgear.gearexaddress = endpoint[0]
-        microgear.gearexport = endpoint[1]
-    else:
-        if cached.get("requesttoken"):
-            get_accesstoken(cached)
+        if 'accesstoken' in cached:
+            microgear.accesstoken = cached["accesstoken"]
+            for x,y in microgear.accesstoken.items():
+                microgear.accesstoken[x] = str(y)
+            endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
+            microgear.gearexaddress = endpoint[0]
+            microgear.gearexport = endpoint[1]
         else:
-            get_requesttoken(cached)
-
+            if cached.get("requesttoken"):
+                get_accesstoken(cached)
+            else:
+                get_requesttoken(cached)
 
 def get_requesttoken(cached):
     logging.debug("Requesting a request token.")
     consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
     client = oauth.Client(consumer)
-    verifier = ''.join(random.sample(string.lowercase+string.digits,8))
+    verifier = ''.join(random.sample(string.ascii_lowercase+string.digits,8))
     params = {'oauth_callback': "scope=%s&appid=%s&verifier=%s" % (microgear.scope, microgear.appid, verifier)}
-    resp, content = client.request(microgear.gearauthrequesttokenendpoint, "POST", body=urllib.urlencode(params))
+    resp, content = client.request(microgear.gearauthrequesttokenendpoint, "POST", body=urlencode(params))
+    content = content.decode('UTF-8')
     matchContent = re.match( r'oauth_token=(.*?)&oauth_token_secret=(.*?).*', content)
     if matchContent:
         contents = content.split("&")
@@ -228,14 +230,15 @@ def get_accesstoken(cached):
     consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
     client = oauth.Client(consumer, token)
     params = { "oauth_verifier": microgear.requesttoken["verifier"]}
-    resp, content = client.request(microgear.gearauthaccesstokenendpoint, "POST", body=urllib.urlencode(params))
+    resp, content = client.request(microgear.gearauthaccesstokenendpoint, "POST", body=urlencode(params))
+    content = content.decode('UTF-8')
     matchContent = re.match( r'endpoint=(.*?)&oauth_token=(.*?)&oauth_token_secret=(.*?).*', content)
     if matchContent:
         contents = content.split("&")
         cached["accesstoken"] = {
         "token": contents[1].split("=")[1],
         "secret": contents[2].split("=")[1],
-        "endpoint": urllib.unquote(contents[0].split("=")[1]).decode('utf8')
+        "endpoint": unquote(contents[0].split("=")[1])
         }
         cache.set_item("microgear.cache", cached)
         microgear.accesstoken = cached["accesstoken"]
@@ -250,7 +253,7 @@ def hmac(key, message):
     import hashlib
     import urllib
 
-    hash = hmac.new(key, message, hashlib.sha1).digest()
+    hash = hmac.new(key.encode('utf-8'),message.encode('utf-8'), hashlib.sha1).digest()
     password = base64.encodestring(hash)
     password = password.strip()
 
