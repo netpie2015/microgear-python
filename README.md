@@ -37,6 +37,7 @@ client.subscribe("/mails")
 client.connect(True)
 
 ------------------------------------------------------------------
+
 client.connect(False)
 
 while True:
@@ -86,7 +87,7 @@ argument
 * *block* `boolean` - True หรือ False
 
 ```python
-client.connect();
+client.connect(True);
 ```
 
 
