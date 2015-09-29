@@ -150,7 +150,13 @@ argument
 
 
 ```python
-client.subscribe("/outdoor/temp");
+client.subscribe("temp");
+```
+
+**client.resettoken()** สำหรับต้องการ reset token ที่มีอยุ่
+
+```python
+client.resettoken();
 ```
 
 
