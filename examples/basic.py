@@ -11,8 +11,8 @@ def connection():
 	print "Now I am connected with netpie"
 
 def subscription(topic,message):
-  client.chat("nobita","Hello world. "+str(int(time.time())))
-  print topic+" "+message
+  	print topic+" "+message
+  	client.chat("nobita","Hey guy."+str(int(time.time())))
 
 client.setname("doraemon")
 client.on_connect = connection
@@ -20,3 +20,7 @@ client.on_message = subscription
 client.subscribe("/mails")
 
 client.connect()
+
+while True:
+    client.chat("doraemon","Hello world."+str(int(time.time())))
+    time.sleep(2)

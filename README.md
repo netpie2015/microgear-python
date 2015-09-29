@@ -27,7 +27,6 @@ def connection():
 	print "Now I am connected with netpie"
 
 def subscription(topic,message):
-	client.chat("nobita","Hello world. "+str(int(time.time())))
 	print topic+" "+message
 
 client.setname("doraemon")
@@ -35,7 +34,15 @@ client.on_connect = connection
 client.on_message = subscription
 client.subscribe("/mails")
 
-client.connect()
+client.connect(True)
+
+------------------------------------------------------------------
+client.connect(False)
+
+while True:
+    client.chat("doraemon","Hello world. "+str(int(time.time())))
+    time.sleep(2)
+
 ```
 
 
@@ -72,7 +79,11 @@ client.create(gearkey,gearsecret,appid, {'debugmode': True, 'scope': "r:/outdoor
 
 
 
-**client.connect():** การเชื่อมต่อ microgear
+**client.connect(*block*):** การเชื่อมต่อ microgear
+
+argument
+
+* *block* `boolean` - True หรือ False
 
 ```python
 client.connect();
