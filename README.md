@@ -36,21 +36,13 @@ client.subscribe("/mails")
 
 client.connect(True)
 
-------------------------------------------------------------------
-
-client.connect(False)
-
-while True:
-    client.chat("doraemon","Hello world. "+str(int(time.time())))
-    time.sleep(2)
-
 ```
-
+[ตัวอย่างเพิ่มเติม](https://github.com/netpieio/microgear-python/wiki#%E0%B8%95%E0%B8%B1%E0%B8%A7%E0%B8%AD%E0%B8%A2%E0%B9%88%E0%B8%B2%E0%B8%87%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B9%83%E0%B8%8A%E0%B9%89%E0%B8%87%E0%B8%B2%E0%B8%99)
 
 
 ##การใช้งาน library
 ------------
-##Microgear
+###Microgear
 ---------------
 **client.create(*gearkey*,*gearsecret*,*appid*):**
 
@@ -80,16 +72,22 @@ client.create(gearkey,gearsecret,appid, {'debugmode': True, 'scope': "r:/outdoor
 
 
 
-**client.connect(*block*):** การเชื่อมต่อ microgear
+**client.connect(*will_block*):** การเชื่อมต่อ microgear
 
 argument
 
-* *block* `boolean` - True หรือ False
+* *will_block* `boolean` - `(optional)` ระบุรูปแบบการเชื่อมต่อ ว่าให้มีการ Block หลังจากเรียกฟังก์ชั่น หรือไม่ ซึ่งจะมีค่า default เป็น `False`  โดยโปรแกรมจะทำงานในบรรทัดถัดไปหลังจากที่ทำการ connect แล้ว ซึ่งจะทำให้ ผู้พัฒนาสามารถ เขียนโปรแกรม ในการติดต่อกับ platfrom ต่อไปได้ โดยการเชื่อมต่อกับ platform จะคงอยู่ เท่าที่มีการทำงานของโปรแกรม เช่น
 
 ```python
-client.connect(True);
+client.connect()
+while True:
+    client.chat("doraemon","Hello world. "+str(int(time.time())))
+    time.sleep(2)
 ```
-
+หากต้องการให้ library ทำการ Block หลังจากทำการ connect แล้ว สามารถระบุ พารามิเตอร์เป็น `True` ได้ เช่น
+```python
+client.connect(True)
+```
 
 
 
@@ -153,7 +151,7 @@ argument
 client.subscribe("temp");
 ```
 
-**client.resettoken()** สำหรับต้องการ reset token ที่มีอยุ่
+**client.resettoken()** สำหรับต้องการลบ Token ที่มีอยู่ ซึ่งจะทำการลบ Token ที่อยู่ภายใน cache และบน platform เมื่อลบแล้ว จำเป็นจะต้องขอ Token ใหม่ทุกครั้ง
 
 ```python
 client.resettoken();
@@ -161,7 +159,7 @@ client.resettoken();
 
 
 
-##Event
+###Event
 ---------------
 application ที่รันบน microgear จะมีการทำงานในแบบ event driven คือเป็นการทำงานตอบสนองต่อ event ต่างๆ ด้วยการเขียน callback function ขึ้นมารองรับในลักษณะๆดังต่อไปนี้
 
