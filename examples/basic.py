@@ -19,7 +19,7 @@ client.on_connect = connection
 client.on_message = subscription
 client.subscribe("/mails")
 
-client.connect()
+client.connect(False)
 
 while True:
     client.chat("doraemon","Hello world."+str(int(time.time())))

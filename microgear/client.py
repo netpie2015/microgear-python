@@ -124,12 +124,12 @@ def client_on_message(client, userdata, msg):
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
 
-
 def client_on_subscribe(client, userdata, mid, granted_qos):
     ## TODO: Check subscribe fail
     pass
 
 def client_on_disconnect(client, userdata, rc):
+    microgear.mqtt_client = None
     on_disconnect()
     logging.debug("Diconnected with result code "+str(rc))
 
@@ -199,18 +199,20 @@ def get_token():
     if cached == None:
         cached = cache.set_item("microgear.cache", {})
     else:
-        if 'accesstoken' in cached:
-            microgear.accesstoken = cached["accesstoken"]
-            for x,y in microgear.accesstoken.items():
-                microgear.accesstoken[x] = str(y)
-            endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
-            microgear.gearexaddress = endpoint[0]
-            microgear.gearexport = endpoint[1]
+        microgear.accesstoken = cached["accesstoken"]
+        for x,y in microgear.accesstoken.items():
+            microgear.accesstoken[x] = str(y)
+
+    if microgear.accesstoken:
+        endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
+        microgear.gearexaddress = endpoint[0]
+        microgear.gearexport = endpoint[1]
+    else:
+        if cached.get("requesttoken"):
+            get_accesstoken(cached)
         else:
-            if cached.get("requesttoken"):
-                get_accesstoken(cached)
-            else:
-                get_requesttoken(cached)
+            get_requesttoken(cached)   
+            
 
 def get_requesttoken(cached):
     logging.debug("Requesting a request token.")
@@ -275,19 +277,24 @@ def hmac(key, message):
     password = base64.encodestring(hash)
     password = password.strip()
 
-    return password
+    return password.decode('utf-8')
 
 def resettoken():
     cached = cache.get_item("microgear.cache")
     if(cached):
         microgear.accesstoken = cached["accesstoken"]
-        path = "/api/revoke/"+microgear.accesstoken["token"]+"/"+microgear.accesstoken["revokecode"]
-        request = requests.get(url=microgear.gearauthsite+path)
-        if(request.status_code==200):
-            cache.delete_item("microgear.cache")
+        if("revokecode" in microgear.accesstoken):
+            path = "/api/revoke/"+microgear.accesstoken["token"]+"/"+microgear.accesstoken["revokecode"]
+            request = requests.get(url=microgear.gearauthsite+path)
+            if(request.status_code==200):
+                cache.delete_item("microgear.cache")
+            else:
+                on_error("Reset token error.")
+                logging.error("Reset token error.")
         else:
-            on_error("Reset token error.")
-            logging.error("Reset token error.")
+            cache.delete_item("microgear.cache")
+            logging.warning("Token is still, please check your key on Key Management.")
         microgear.accesstoken = None
+    
     
         
