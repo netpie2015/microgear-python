@@ -14,13 +14,16 @@ import time
 import re
 import string
 import paho.mqtt.client as mqtt
+import requests
+import threading
+
 
 
 def do_nothing(arg1=None, arg2=None):
     pass
 
 subscribe_list = []
-pubilsh_list = []
+publish_list = []
 on_disconnect = do_nothing
 on_present = do_nothing
 on_absent = do_nothing
@@ -54,7 +57,7 @@ def create(gearkey,gearsecret, appid="", args = {}):
     microgear.appid = appid
 
 def client_on_connect(client, userdata, rc):
-    global pubilsh_list
+    global publish_list
     global subscribe_list
     logging.debug("Connected with result code "+str(rc))
     if rc == 0 :
@@ -68,9 +71,9 @@ def client_on_connect(client, userdata, rc):
             on_error("Microgear currently is not available.")
             logging.error("Microgear currently is not available.")
         if(microgear.mqtt_client):
-            for topic in pubilsh_list :
+            for topic in publish_list :
                 client.publish(topic[0],topic[1])
-            pubilsh_list = []
+            publish_list = []
         else:
             on_error("Microgear currently is not available.")
             logging.error("Microgear currently is not available.")
@@ -95,7 +98,7 @@ def client_on_connect(client, userdata, rc):
 
 
 def client_on_message(client, userdata, msg):
-    global pubilsh_list
+    global publish_list
     global subscribe_list
     topics = msg.topic.split("/")
     if topics[1] == "&present":
@@ -114,29 +117,29 @@ def client_on_message(client, userdata, msg):
         logging.error("Microgear currently is not available.")
 
     if(microgear.mqtt_client):
-        for topic in pubilsh_list :
+        for topic in publish_list :
             client.publish(topic[0],topic[1])
-        pubilsh_list = []
+        publish_list = []
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
-
 
 def client_on_subscribe(client, userdata, mid, granted_qos):
     ## TODO: Check subscribe fail
     pass
 
 def client_on_disconnect(client, userdata, rc):
+    microgear.mqtt_client = None
     on_disconnect()
     logging.debug("Diconnected with result code "+str(rc))
 
-def connect():
+def connect(block=False):
     global subscribe_list
     times = 1
     while not microgear.accesstoken:
         get_token()
         time.sleep(times)
-        times = times+1
+        times = times+10
     microgear.mqtt_client = mqtt.Client(microgear.accesstoken["token"])
     subscribe_list.append('/&id/'+str(microgear.accesstoken["token"])+'/#')
     endpoint = microgear.accesstoken["endpoint"].split("//")[1].split(":")
@@ -150,19 +153,32 @@ def connect():
     microgear.mqtt_client.on_subscribe = client_on_subscribe
     microgear.mqtt_client.on_disconnect = client_on_disconnect
 
-    microgear.mqtt_client.loop_forever()
-
-def resettoken():
-    cache.delete_item("microgear.cache")
+    if(block):
+        microgear.mqtt_client.loop_forever()
+    else:
+        microgear.mqtt_client.loop_start()
+        while True:
+            time.sleep(2)
+            break
+    
 
 def subscribe(topic):
     global subscribe_list
     topic = "/"+microgear.appid+topic
     subscribe_list.append(topic)
 
+def publish_thread(topic,message):
+    microgear.mqtt_client.publish(topic,message)
+
 def publish(topic,message):
-    global pubilsh_list
-    pubilsh_list.append(["/"+microgear.appid+topic,message])
+    global publish_list
+    threads = []
+    if microgear.mqtt_client:
+        t = threading.Thread(target=publish_thread, args=("/"+microgear.appid+topic,message,))
+        threads.append(t)
+        t.start()
+    else:
+        publish_list.append(["/"+microgear.appid+topic,message])
 
 def setname(topic):
     microgear.gearname = topic
@@ -183,18 +199,20 @@ def get_token():
     if cached == None:
         cached = cache.set_item("microgear.cache", {})
     else:
-        if 'accesstoken' in cached:
-            microgear.accesstoken = cached["accesstoken"]
-            for x,y in microgear.accesstoken.items():
-                microgear.accesstoken[x] = str(y)
-            endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
-            microgear.gearexaddress = endpoint[0]
-            microgear.gearexport = endpoint[1]
+        microgear.accesstoken = cached["accesstoken"]
+        for x,y in microgear.accesstoken.items():
+            microgear.accesstoken[x] = str(y)
+
+    if microgear.accesstoken:
+        endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
+        microgear.gearexaddress = endpoint[0]
+        microgear.gearexport = endpoint[1]
+    else:
+        if cached.get("requesttoken"):
+            get_accesstoken(cached)
         else:
-            if cached.get("requesttoken"):
-                get_accesstoken(cached)
-            else:
-                get_requesttoken(cached)
+            get_requesttoken(cached)   
+            
 
 def get_requesttoken(cached):
     logging.debug("Requesting a request token.")
@@ -235,10 +253,12 @@ def get_accesstoken(cached):
     matchContent = re.match( r'endpoint=(.*?)&oauth_token=(.*?)&oauth_token_secret=(.*?).*', content)
     if matchContent:
         contents = content.split("&")
+        revokecode = hmac(contents[2].split("=")[1]+"&"+microgear.gearsecret,contents[1].split("=")[1]).replace('/','_')
         cached["accesstoken"] = {
         "token": contents[1].split("=")[1],
         "secret": contents[2].split("=")[1],
-        "endpoint": unquote(contents[0].split("=")[1])
+        "endpoint": unquote(contents[0].split("=")[1]),
+        "revokecode": revokecode
         }
         cache.set_item("microgear.cache", cached)
         microgear.accesstoken = cached["accesstoken"]
@@ -257,4 +277,24 @@ def hmac(key, message):
     password = base64.encodestring(hash)
     password = password.strip()
 
-    return password
+    return password.decode('utf-8')
+
+def resettoken():
+    cached = cache.get_item("microgear.cache")
+    if(cached):
+        microgear.accesstoken = cached["accesstoken"]
+        if("revokecode" in microgear.accesstoken):
+            path = "/api/revoke/"+microgear.accesstoken["token"]+"/"+microgear.accesstoken["revokecode"]
+            request = requests.get(url=microgear.gearauthsite+path)
+            if(request.status_code==200):
+                cache.delete_item("microgear.cache")
+            else:
+                on_error("Reset token error.")
+                logging.error("Reset token error.")
+        else:
+            cache.delete_item("microgear.cache")
+            logging.warning("Token is still, please check your key on Key Management.")
+        microgear.accesstoken = None
+    
+    
+        
