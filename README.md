@@ -84,7 +84,7 @@ while True:
     client.chat("doraemon","Hello world. "+str(int(time.time())))
     time.sleep(2)
 ```
-หากต้องการให้ library ทำการ Block หลังจากทำการ connect แล้ว สามารถระบุ พารามิเตอร์เป็น `True` ได้ เช่น
+หากต้องการให้ library ทำการ Block หลังจากทำการ connect แล้ว ซึ่งหลังจาก connect แล้วโปรแกรมหยุดอยู่ที่การทำงานร่วมกับ platform โดยจะทำงานตามที่มี เหตุการณ์ callback (on_*) ที่ถูกกำหนดไว้ก่อนหน้า โดยสามารถระบุ พารามิเตอร์เป็น `True` ได้ เช่น
 ```python
 client.connect(True)
 ```
