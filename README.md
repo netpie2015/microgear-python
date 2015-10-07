@@ -143,12 +143,12 @@ client.publish("/outdoor/temp","28.5");
 
 argument
 
-* *topic* `string` - ชื่อของ topic ที่ความสนใจ
+* *topic* `string` - ชื่อของ topic ที่ความสนใจ โดยขึ้นต้นด้วยเครื่องหมาย "/" 
 
 
 
 ```python
-client.subscribe("temp");
+client.subscribe("/temp");
 ```
 
 **client.resettoken()** สำหรับต้องการลบ Token ที่มีอยู่ ซึ่งจะทำการลบ Token ที่อยู่ภายใน cache และบน platform เมื่อลบแล้ว จำเป็นจะต้องขอ Token ใหม่ทุกครั้ง
