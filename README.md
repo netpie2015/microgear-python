@@ -150,7 +150,7 @@ argument
 
 
 ```python
-client.subscribe("temp");
+client.subscribe("/temp");
 ```
 
 **client.resettoken()** สำหรับต้องการ reset token ที่มีอยุ่
