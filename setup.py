@@ -9,5 +9,5 @@ setup(
   url = 'https://github.com/netpieio/microgear-python', # use the URL to the github repo
   keywords = [], # arbitrary keywords
   classifiers = [],
-  install_requires=['paho-mqtt','oauth2','requests'],
+  install_requires=['paho-mqtt','oauth2'],
 )

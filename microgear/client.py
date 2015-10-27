@@ -14,10 +14,11 @@ import time
 import re
 import string
 import paho.mqtt.client as mqtt
-import requests
 import threading
-
-
+try:
+    import httplib.client as httplib
+except ImportError:
+    import httplib
 
 def do_nothing(arg1=None, arg2=None):
     pass
@@ -57,26 +58,10 @@ def create(gearkey,gearsecret, appid="", args = {}):
     microgear.appid = appid
 
 def client_on_connect(client, userdata, rc):
-    global publish_list
-    global subscribe_list
     logging.debug("Connected with result code "+str(rc))
     if rc == 0 :
         on_connect()
-        if(microgear.mqtt_client):
-            for topic in subscribe_list :
-                client.subscribe(topic)
-                logging.debug("Auto subscribe "+topic )
-            subscribe_list = []
-        else:
-            on_error("Microgear currently is not available.")
-            logging.error("Microgear currently is not available.")
-        if(microgear.mqtt_client):
-            for topic in publish_list :
-                client.publish(topic[0],topic[1])
-            publish_list = []
-        else:
-            on_error("Microgear currently is not available.")
-            logging.error("Microgear currently is not available.")
+        auto_subscribeAndpublish()
     elif rc == 1 :
         on_reject("Incorrect protocol version.")
         logging.warning("Incorrect protocol version.")
@@ -96,33 +81,14 @@ def client_on_connect(client, userdata, rc):
         on_reject("Unknown reason")
         logging.warning("Unknown reason")
 
-
 def client_on_message(client, userdata, msg):
-    global publish_list
-    global subscribe_list
     topics = msg.topic.split("/")
-    if topics[1] == "&present":
+    if topics[2] == "&present":
         on_present(str(msg.payload))
-    elif topics[1] == "&absent":
+    elif topics[2] == "&absent":
         on_absent(str(msg.payload))
     else:
         on_message(msg.topic,str(msg.payload))
-    if(microgear.mqtt_client):
-        for topic in subscribe_list :
-            client.subscribe(topic)
-            logging.debug("Auto subscribe "+topic )
-        subscribe_list = []
-    else:
-        on_error("Microgear currently is not available.")
-        logging.error("Microgear currently is not available.")
-
-    if(microgear.mqtt_client):
-        for topic in publish_list :
-            client.publish(topic[0],topic[1])
-        publish_list = []
-    else:
-        on_error("Microgear currently is not available.")
-        logging.error("Microgear currently is not available.")
 
 def client_on_subscribe(client, userdata, mid, granted_qos):
     ## TODO: Check subscribe fail
@@ -160,15 +126,53 @@ def connect(block=False):
         while True:
             time.sleep(2)
             break
-    
+
+def auto_subscribeAndpublish():
+    global publish_list
+    global subscribe_list
+    if microgear.mqtt_client:
+        microgear.mqtt_client.subscribe("/"+microgear.appid+"/&present")
+        microgear.mqtt_client.subscribe("/"+microgear.appid+"/&absent")
+        for topic in subscribe_list :
+            microgear.mqtt_client.subscribe(topic)
+            logging.debug("Auto subscribe "+topic )
+            subscribe_list = []
+    else:
+        on_error("Microgear currently is not available.")
+        logging.error("Microgear currently is not available.")
+    if microgear.mqtt_client :
+        for topic in publish_list :
+            microgear.mqtt_client.publish(topic[0],topic[1])
+            publish_list = []
+    else:
+        on_error("Microgear currently is not available.")
+        logging.error("Microgear currently is not available.")
+
+
+def subscribe_thread(topic):
+    if microgear.mqtt_client :
+        logging.debug("Auto subscribe "+topic)
+        microgear.mqtt_client.subscribe(topic) 
+    else:
+        on_error("Microgear currently is not available.")
+        logging.error("Microgear currently is not available.")
 
 def subscribe(topic):
     global subscribe_list
-    topic = "/"+microgear.appid+topic
-    subscribe_list.append(topic)
+    threads = []
+    if microgear.mqtt_client:
+        t = threading.Thread(target=subscribe_thread, args=("/"+microgear.appid+topic,))
+        threads.append(t)
+        t.start()
+    else:
+        subscribe_list.append("/"+microgear.appid+topic)
 
 def publish_thread(topic,message):
-    microgear.mqtt_client.publish(topic,message)
+    if microgear.mqtt_client :
+        microgear.mqtt_client.publish(topic,message)
+    else:
+        on_error("Microgear currently is not available.")
+        logging.error("Microgear currently is not available.")
 
 def publish(topic,message):
     global publish_list
@@ -200,8 +204,8 @@ def get_token():
         cached = cache.set_item("microgear.cache", {})
     else:
         microgear.accesstoken = cached["accesstoken"]
-        for x,y in microgear.accesstoken.items():
-            microgear.accesstoken[x] = str(y)
+        for name,value in microgear.accesstoken.items():
+            microgear.accesstoken[name] = str(value)
 
     if microgear.accesstoken:
         endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
@@ -213,7 +217,6 @@ def get_token():
         else:
             get_requesttoken(cached)   
             
-
 def get_requesttoken(cached):
     logging.debug("Requesting a request token.")
     consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
@@ -226,15 +229,14 @@ def get_requesttoken(cached):
     if matchContent:
         contents = content.split("&")
         cached["requesttoken"] = {
-        "token": contents[0].split("=")[1],
-        "secret": contents[1].split("=")[1],
-        "verifier": verifier
+            "token": contents[0].split("=")[1],
+            "secret": contents[1].split("=")[1],
+            "verifier": verifier
         }
         cache.set_item("microgear.cache", cached)
         microgear.requesttoken = cached["requesttoken"]
         get_accesstoken(cached)
     else:
-        #logging.warning("Request token is not issued, please check your appkey and appsecret.")
         on_error("Request token is not issued, please check your appkey and appsecret.")
         logging.error("Request token is not issued, please check your appkey and appsecret.")
 
@@ -255,15 +257,14 @@ def get_accesstoken(cached):
         contents = content.split("&")
         revokecode = hmac(contents[2].split("=")[1]+"&"+microgear.gearsecret,contents[1].split("=")[1]).replace('/','_')
         cached["accesstoken"] = {
-        "token": contents[1].split("=")[1],
-        "secret": contents[2].split("=")[1],
-        "endpoint": unquote(contents[0].split("=")[1]),
-        "revokecode": revokecode
+            "token": contents[1].split("=")[1],
+            "secret": contents[2].split("=")[1],
+            "endpoint": unquote(contents[0].split("=")[1]),
+            "revokecode": revokecode
         }
         cache.set_item("microgear.cache", cached)
         microgear.accesstoken = cached["accesstoken"]
     else:
-        #logging.warning("Access token is not issued, please check your consumerkey and consumersecret.")
         on_error("Access token is not issued, please check your consumerkey and consumersecret.")
         logging.error("Access token is not issued, please check your consumerkey and consumersecret.")
 
@@ -281,12 +282,14 @@ def hmac(key, message):
 
 def resettoken():
     cached = cache.get_item("microgear.cache")
-    if(cached):
+    if cached :
         microgear.accesstoken = cached["accesstoken"]
-        if("revokecode" in microgear.accesstoken):
+        if "revokecode" in microgear.accesstoken :
             path = "/api/revoke/"+microgear.accesstoken["token"]+"/"+microgear.accesstoken["revokecode"]
-            request = requests.get(url=microgear.gearauthsite+path)
-            if(request.status_code==200):
+            conn = httplib.HTTPConnection("gearauth.netpie.io", 8080)
+            conn.request("GET", path)
+            r1 = conn.getresponse()
+            if(r1.status==200):
                 cache.delete_item("microgear.cache")
             else:
                 on_error("Reset token error.")
