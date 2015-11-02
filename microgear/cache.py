@@ -1,8 +1,6 @@
 import os
 import json
 
-
-
 def get_item(key):
     try:
         return json.loads(open(os.path.join(os.getcwd(),key), "rb").read().decode('UTF-8'))["_"]
