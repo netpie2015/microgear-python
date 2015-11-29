@@ -9,6 +9,7 @@ try:
 except ImportError:
     from urllib import urlencode
     from urllib import unquote
+import httplib2
 import random
 import time
 import re
@@ -152,7 +153,7 @@ def auto_subscribeAndpublish():
 def subscribe_thread(topic):
     if microgear.mqtt_client :
         logging.debug("Auto subscribe "+topic)
-        microgear.mqtt_client.subscribe(topic) 
+        microgear.mqtt_client.subscribe(topic)
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
@@ -215,15 +216,23 @@ def get_token():
         if cached.get("requesttoken"):
             get_accesstoken(cached)
         else:
-            get_requesttoken(cached)   
-            
+            get_requesttoken(cached)
+
 def get_requesttoken(cached):
     logging.debug("Requesting a request token.")
     consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
     client = oauth.Client(consumer)
     verifier = ''.join(random.sample(string.ascii_lowercase+string.digits,8))
+    headers = {}
+    method = "POST"
     params = {'oauth_callback': "scope=%s&appid=%s&verifier=%s" % (microgear.scope, microgear.appid, verifier)}
-    resp, content = client.request(microgear.gearauthrequesttokenendpoint, "POST", body=urlencode(params))
+    req = oauth.Request.from_consumer_and_token(consumer, http_method=method,
+            http_url=microgear.gearauthrequesttokenendpoint, parameters=params)
+    req.sign_request(oauth.SignatureMethod_HMAC_SHA1(), consumer, None)
+    headers.update(req.to_header(realm="NETPIE"))
+    h = httplib2.Http(".cache")
+    resp, content = h.request(microgear.gearauthrequesttokenendpoint, method=method,
+            headers=headers)
     content = content.decode('UTF-8')
     matchContent = re.match( r'oauth_token=(.*?)&oauth_token_secret=(.*?).*', content)
     if matchContent:
@@ -250,7 +259,15 @@ def get_accesstoken(cached):
     consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
     client = oauth.Client(consumer, token)
     params = { "oauth_verifier": microgear.requesttoken["verifier"]}
-    resp, content = client.request(microgear.gearauthaccesstokenendpoint, "POST", body=urlencode(params))
+    headers = {}
+    method = "POST"
+    req = oauth.Request.from_consumer_and_token(consumer, token=token, http_method=method,
+            http_url=microgear.gearauthaccesstokenendpoint, parameters=params)
+    req.sign_request(oauth.SignatureMethod_HMAC_SHA1(), consumer, token)
+    headers.update(req.to_header(realm="NETPIE"))
+    h = httplib2.Http(".cache")
+    resp, content = h.request(microgear.gearauthaccesstokenendpoint, method=method,
+            headers=headers)
     content = content.decode('UTF-8')
     matchContent = re.match( r'endpoint=(.*?)&oauth_token=(.*?)&oauth_token_secret=(.*?).*', content)
     if matchContent:
@@ -298,6 +315,3 @@ def resettoken():
             cache.delete_item("microgear.cache")
             logging.warning("Token is still, please check your key on Key Management.")
         microgear.accesstoken = None
-    
-    
-        
