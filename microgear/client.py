@@ -16,10 +16,6 @@ import re
 import string
 import paho.mqtt.client as mqtt
 import threading
-try:
-    import httplib.client as httplib
-except ImportError:
-    import httplib
 
 def do_nothing(arg1=None, arg2=None):
     pass
@@ -303,10 +299,9 @@ def resettoken():
         microgear.accesstoken = cached["accesstoken"]
         if "revokecode" in microgear.accesstoken :
             path = "/api/revoke/"+microgear.accesstoken["token"]+"/"+microgear.accesstoken["revokecode"]
-            conn = httplib.HTTPConnection("gearauth.netpie.io", 8080)
-            conn.request("GET", path)
-            r1 = conn.getresponse()
-            if(r1.status==200):
+            h = httplib2.Http(".cache")
+            resp, content = h.request("http://gearauth.netpie.io:8080"+path, method="GET")
+            if(resp.status==200):
                 cache.delete_item("microgear.cache")
             else:
                 on_error("Reset token error.")
