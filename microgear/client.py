@@ -197,12 +197,12 @@ def writestream(stream,data):
 def get_token():
     logging.debug("Check stored token.")
     cached = cache.get_item("microgear.cache")
-    if cached == None:
-        cached = cache.set_item("microgear.cache", {})
-    else:
+    if cached and cached.get("accesstoken"):
         microgear.accesstoken = cached["accesstoken"]
         for name,value in microgear.accesstoken.items():
             microgear.accesstoken[name] = str(value)
+    else:
+        cached = cache.set_item("microgear.cache", {})
 
     if microgear.accesstoken:
         endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
