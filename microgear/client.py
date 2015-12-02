@@ -234,6 +234,8 @@ def get_token():
             microgear.accesstoken[name] = str(value)
     else:
         cached = cache.set_item("microgear.cache", {})
+        cached["key"] = microgear.gearkey
+        cache.set_item("microgear.cache", cached)
 
     if microgear.accesstoken:
         endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
@@ -300,6 +302,7 @@ def get_accesstoken(cached):
     if matchContent:
         contents = content.split("&")
         revokecode = hmac(contents[2].split("=")[1]+"&"+microgear.gearsecret,contents[1].split("=")[1]).replace('/','_')
+        cached["requesttoken"] = None
         cached["accesstoken"] = {
             "token": contents[1].split("=")[1],
             "secret": contents[2].split("=")[1],
