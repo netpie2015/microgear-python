@@ -21,7 +21,10 @@ def do_nothing(arg1=None, arg2=None):
     pass
 
 subscribe_list = []
+current_subscribe_list = []
+current_id =None
 publish_list = []
+block_loop = False
 on_disconnect = do_nothing
 on_present = do_nothing
 on_absent = do_nothing
@@ -55,6 +58,7 @@ def create(gearkey,gearsecret, appid="", args = {}):
     microgear.appid = appid
 
 def client_on_connect(client, userdata, rc):
+    global block
     logging.debug("Connected with result code "+str(rc))
     if rc == 0 :
         on_connect()
@@ -69,8 +73,12 @@ def client_on_connect(client, userdata, rc):
         on_reject("Server unavailable.")
         logging.warning("Server unavailable.")
     elif rc == 4 :
+        unsubscribe(current_id)
+        microgear.mqtt_client.disconnect()
         on_reject("Bad username or password.")
         logging.warning("Bad username or password.")
+        resettoken()
+        connect(block_loop)
     elif rc == 5 :
         on_reject("Not authorised.")
         logging.warning("Not authorised.")
@@ -92,19 +100,23 @@ def client_on_subscribe(client, userdata, mid, granted_qos):
     pass
 
 def client_on_disconnect(client, userdata, rc):
-    microgear.mqtt_client = None
     on_disconnect()
-    logging.debug("Diconnected with result code "+str(rc))
+    if rc!=0:
+        logging.debug("Diconnected with result code "+str(rc))
 
 def connect(block=False):
-    global subscribe_list
+    global block_loop 
+    block_loop = block
+    global current_subscribe_list
+    global current_id
     times = 1
     while not microgear.accesstoken:
         get_token()
         time.sleep(times)
         times = times+10
     microgear.mqtt_client = mqtt.Client(microgear.accesstoken["token"])
-    subscribe_list.append('/&id/'+str(microgear.accesstoken["token"])+'/#')
+    current_id = '/&id/'+str(microgear.accesstoken["token"])+'/#'
+    current_subscribe_list.append('/&id/'+str(microgear.accesstoken["token"])+'/#')
     endpoint = microgear.accesstoken["endpoint"].split("//")[1].split(":")
     username = microgear.gearkey+"%"+str(int(time.time()))
     password = hmac(microgear.accesstoken["secret"]+"&"+microgear.gearsecret,microgear.accesstoken["token"]+"%"+username)
@@ -126,14 +138,13 @@ def connect(block=False):
 
 def auto_subscribeAndpublish():
     global publish_list
-    global subscribe_list
+    global current_subscribe_list
     if microgear.mqtt_client:
         microgear.mqtt_client.subscribe("/"+microgear.appid+"/&present")
         microgear.mqtt_client.subscribe("/"+microgear.appid+"/&absent")
-        for topic in subscribe_list :
+        for topic in current_subscribe_list :
             microgear.mqtt_client.subscribe(topic)
-            logging.debug("Auto subscribe "+topic )
-            subscribe_list = []
+            logging.debug("Auto subscribe "+topic)
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
@@ -156,13 +167,33 @@ def subscribe_thread(topic):
 
 def subscribe(topic):
     global subscribe_list
+    global current_subscribe_list
     threads = []
+    if "/"+microgear.appid+topic not in current_subscribe_list:
+        current_subscribe_list.append("/"+microgear.appid+topic)
+
     if microgear.mqtt_client:
         t = threading.Thread(target=subscribe_thread, args=("/"+microgear.appid+topic,))
         threads.append(t)
         t.start()
     else:
         subscribe_list.append("/"+microgear.appid+topic)
+        
+
+def unsubscribe(topic):
+    global current_subscribe_list
+    global current_id
+    if microgear.mqtt_client:
+        if topic == current_id:
+            current_subscribe_list.remove(current_id)
+            microgear.mqtt_client.unsubscribe(current_id)
+        if "/"+microgear.appid+topic in current_subscribe_list:
+            current_subscribe_list.remove("/"+microgear.appid+topic)
+            microgear.mqtt_client.unsubscribe("/"+microgear.appid+topic)
+        logging.debug("Auto unsubscribe "+topic)
+    else:
+        on_error("Microgear currently is not available.")
+        logging.error("Microgear currently is not available.")
 
 def publish_thread(topic,message):
     if microgear.mqtt_client :
@@ -198,11 +229,13 @@ def get_token():
     logging.debug("Check stored token.")
     cached = cache.get_item("microgear.cache")
     if cached and cached.get("accesstoken"):
-        microgear.accesstoken = cached["accesstoken"]
+        microgear.accesstoken = cached.get("accesstoken")
         for name,value in microgear.accesstoken.items():
             microgear.accesstoken[name] = str(value)
     else:
         cached = cache.set_item("microgear.cache", {})
+        cached["key"] = microgear.gearkey
+        cache.set_item("microgear.cache", cached)
 
     if microgear.accesstoken:
         endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
@@ -269,6 +302,7 @@ def get_accesstoken(cached):
     if matchContent:
         contents = content.split("&")
         revokecode = hmac(contents[2].split("=")[1]+"&"+microgear.gearsecret,contents[1].split("=")[1]).replace('/','_')
+        cached["requesttoken"] = None
         cached["accesstoken"] = {
             "token": contents[1].split("=")[1],
             "secret": contents[2].split("=")[1],
