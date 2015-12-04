@@ -1,12 +1,14 @@
 import logging
-__version__ = '1.1.3'
+__version__ = '1.1.8'
 
 gearauthsite = "http://gearauth.netpie.io:8080"
-gearauthrequesttokenendpoint = gearauthsite+"/oauth/request_token"
-gearauthaccesstokenendpoint = gearauthsite+"/oauth/access_token"
+gearauthrequesttokenendpoint = gearauthsite+"/api/rtoken"
+gearauthaccesstokenendpoint = gearauthsite+"/api/atoken"
 
+mgrv = "PY11h;"
 gearkey = None
 gearsecret = None
+gearlabel = None
 appid = None
 gearname = None
 accesstoken = None

@@ -44,7 +44,7 @@ def create(gearkey,gearsecret, appid="", args = {}):
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%d/%m/%Y %I:%M:%S %p',
                         )
-
+    microgear.gearlabel = args.get('label')
     if 'scope' in args:
         matchScope = re.match( r'^(\w+:[a-zA-Z\/]+,*)+$', args['scope'])
         if matchScope:
@@ -92,6 +92,9 @@ def client_on_message(client, userdata, msg):
         on_present(str(msg.payload))
     elif topics[2] == "&absent":
         on_absent(str(msg.payload))
+    elif '&id' in topic[2]:
+        #controll message
+        pass
     else:
         on_message(msg.topic,str(msg.payload))
 
@@ -105,7 +108,7 @@ def client_on_disconnect(client, userdata, rc):
         logging.debug("Diconnected with result code "+str(rc))
 
 def connect(block=False):
-    global block_loop 
+    global block_loop
     block_loop = block
     global current_subscribe_list
     global current_id
@@ -178,7 +181,7 @@ def subscribe(topic):
         t.start()
     else:
         subscribe_list.append("/"+microgear.appid+topic)
-        
+
 
 def unsubscribe(topic):
     global current_subscribe_list
@@ -228,30 +231,35 @@ def writestream(stream,data):
 def get_token():
     logging.debug("Check stored token.")
     cached = cache.get_item("microgear.cache")
-    if cached and cached.get("accesstoken"):
-        microgear.accesstoken = cached.get("accesstoken")
-        for name,value in microgear.accesstoken.items():
-            microgear.accesstoken[name] = str(value)
+    if cached:
+        if cached.get("accesstoken"):
+            if not cached.get("key"):
+                cached["key"] = microgear.gearkey
+                cache.set_item("microgear.cache", cached)
+            microgear.accesstoken = cached.get("accesstoken")
+            for name,value in microgear.accesstoken.items():
+                microgear.accesstoken[name] = str(value)
+            endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
+            microgear.gearexaddress = endpoint[0]
+            microgear.gearexport = endpoint[1]
+        elif cached.get("requesttoken"):
+            get_accesstoken(cached)
+        else:
+            get_requesttoken(cached)
     else:
         cached = cache.set_item("microgear.cache", {})
         cached["key"] = microgear.gearkey
         cache.set_item("microgear.cache", cached)
 
-    if microgear.accesstoken:
-        endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
-        microgear.gearexaddress = endpoint[0]
-        microgear.gearexport = endpoint[1]
-    else:
-        if cached.get("requesttoken"):
-            get_accesstoken(cached)
-        else:
-            get_requesttoken(cached)
-
 def get_requesttoken(cached):
     logging.debug("Requesting a request token.")
     consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
     client = oauth.Client(consumer)
-    verifier = ''.join(random.sample(string.ascii_lowercase+string.digits,8))
+    verifier = microgear.mgrv
+    if microgear.gearlabel:
+        verifier+= microgear.gearlabel
+    else:
+        verifier += "_"+''.join(random.sample(string.ascii_lowercase+string.digits,8))
     headers = {}
     method = "POST"
     params = {'oauth_callback': "scope=%s&appid=%s&verifier=%s" % (microgear.scope, microgear.appid, verifier)}
@@ -280,9 +288,7 @@ def get_requesttoken(cached):
 
 def get_accesstoken(cached):
     microgear.requesttoken = cached.get("requesttoken")
-    #send requesttoken to obtain accesstoken
     logging.debug("Already has request token.")
-    #logging.debug(json.dumps(microgear.requesttoken))
     logging.debug("Requesting an access token.")
     token = oauth.Token(key=microgear.requesttoken.get("token"), secret=microgear.requesttoken.get("secret"))
     consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
@@ -297,21 +303,24 @@ def get_accesstoken(cached):
     h = httplib2.Http(".cache")
     resp, content = h.request(microgear.gearauthaccesstokenendpoint, method=method,
             headers=headers)
-    content = content.decode('UTF-8')
-    matchContent = re.match( r'endpoint=(.*?)&oauth_token=(.*?)&oauth_token_secret=(.*?).*', content)
-    if matchContent:
+    content = unquote(content.decode('UTF-8'))
+    if resp.status == 200:
         contents = content.split("&")
-        revokecode = hmac(contents[2].split("=")[1]+"&"+microgear.gearsecret,contents[1].split("=")[1]).replace('/','_')
+        revokecode = hmac(contents[3].split("=")[1]+"&"+microgear.gearsecret,contents[2].split("=")[1]).replace('/','_')
         cached["requesttoken"] = None
         cached["accesstoken"] = {
-            "token": contents[1].split("=")[1],
-            "secret": contents[2].split("=")[1],
-            "endpoint": unquote(contents[0].split("=")[1]),
+            "token": contents[2].split("=")[1],
+            "secret": contents[3].split("=")[1],
+            "endpoint": contents[1].split("=")[1],
             "revokecode": revokecode
         }
-        cache.set_item("microgear.cache", cached)
+        if contents[0].split("=")[1] == "P":
+            cache.set_item("microgear.cache", cached)
+        elif contents[0].split("=")[1] == "S":
+            cache.set_item("microgear.cache", {})
         microgear.accesstoken = cached["accesstoken"]
     else:
+        resettoken()
         on_error("Access token is not issued, please check your consumerkey and consumersecret.")
         logging.error("Access token is not issued, please check your consumerkey and consumersecret.")
 
@@ -330,7 +339,7 @@ def hmac(key, message):
 def resettoken():
     cached = cache.get_item("microgear.cache")
     if cached :
-        microgear.accesstoken = cached["accesstoken"]
+        microgear.accesstoken = cached.get("accesstoken",{})
         if "revokecode" in microgear.accesstoken :
             path = "/api/revoke/"+microgear.accesstoken["token"]+"/"+microgear.accesstoken["revokecode"]
             h = httplib2.Http(".cache")
