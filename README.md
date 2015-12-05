@@ -21,7 +21,7 @@ gearkey = <gearkey>
 gearsecret =  <gearsecret>
 appid = <appid>
 
-client.create(gearkey,gearsecret,appid,{'debugmode': True})
+client.create(gearkey,gearsecret,appid,{'label': "doraemon"})
 
 def connection():
 	print "Now I am connected with netpie"
@@ -44,7 +44,7 @@ client.connect(True)
 ------------
 ###Microgear
 ---------------
-**client.create(*gearkey*,*gearsecret*,*appid*):**
+**client.create(*gearkey*,*gearsecret*,*appid*,*args*):**
 
 arguments
 
@@ -57,6 +57,7 @@ arguments
        * [r][w]:&lt;/topic/path&gt; - r และ w คือสิทธิ์ในการ publish ละ subscribe topic ดังที่ระบุ เช่น rw:/outdoor/temp
        *  name:&lt;gearname&gt; - คือสิทธิ์ในการตั้งชื่อตัวเองว่า &lt;gearname&gt;
        *  chat:&lt;gearname&gt; - คือสิทธ์ในการ chat กับ &lt;gearname&gt;
+   * *label* string - กำหนดข้อความฉลากสำหรับแสดงที่หน้า key management
 
 ในขั้นตอนของการสร้าง key บนเว็บ netpie.io นักพัฒนาสามารถกำหนดสิทธิ์ขั้นพื้นฐานให้แต่ละ key ได้อยู่แล้ว หากการ create microgear อยู่ภายใต้ขอบเขตของสิทธิ์ที่มี token จะถูกจ่ายอัตโนมัติ และ microgear จะสามารถเชื่อมต่อ netpie platform ได้ทันที แต่หาก scope ที่ร้องขอนั้นมากเกินกว่าสิทธิ์ที่กำหนดไว้ นักพัฒนาจะได้รับ notification ให้พิจารณาอนุมัติ microgear ที่เข้ามาขอเชื่อมต่อ ข้อควรระวัง หาก microgear มีการกระทำการเกินกว่าสิทธิ์ที่ได้รับไป เช่น พยายามจะ publish ไปยัง topic ที่ตัวเองไม่มีสิทธิ์ netpie จะตัดการเชื่อมต่อของ microgear โดยอัตโนมัติ ในกรณีที่ใช้ APPKEY เป็น gearkey เราสามารถละเว้น attribute นี้ได้ เพราะ APPKEY จะได้สิทธิ์ทุกอย่างในฐานะของเจ้าของ app โดย default อยู่แล้ว 
 
@@ -66,7 +67,7 @@ gearkey = <gearkey>
 gearsecret =  <gearsecret>
 appid = <appid>
 
-client.create(gearkey,gearsecret,appid, {'debugmode': True, 'scope': "r:/outdoor/temp,w:/outdoor/valve,name:logger,chat:plant"})
+client.create(gearkey,gearsecret,appid, {'debugmode': True, 'scope': "r:/outdoor/temp,w:/outdoor/valve,name:logger,chat:plant", 'labe': "logger"})
 ```
 
 
