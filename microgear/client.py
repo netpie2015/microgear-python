@@ -92,7 +92,7 @@ def client_on_message(client, userdata, msg):
         on_present(str(msg.payload))
     elif topics[2] == "&absent":
         on_absent(str(msg.payload))
-    elif '&id' in topic[2]:
+    elif '&id' in topics[2]:
         #controll message
         pass
     else:

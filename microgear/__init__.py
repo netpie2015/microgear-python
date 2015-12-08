@@ -1,11 +1,11 @@
 import logging
-__version__ = '1.1.8'
+__version__ = '1.1.9'
 
 gearauthsite = "http://gearauth.netpie.io:8080"
 gearauthrequesttokenendpoint = gearauthsite+"/api/rtoken"
 gearauthaccesstokenendpoint = gearauthsite+"/api/atoken"
 
-mgrv = "PY11h;"
+mgrv = "PY11i;"
 gearkey = None
 gearsecret = None
 gearlabel = None
