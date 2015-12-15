@@ -21,7 +21,7 @@ gearkey = <gearkey>
 gearsecret =  <gearsecret>
 appid = <appid>
 
-client.create(gearkey,gearsecret,appid,{'label': "doraemon"})
+client.create(gearkey,gearsecret,appid)
 
 def connection():
 	print "Now I am connected with netpie"
@@ -29,7 +29,7 @@ def connection():
 def subscription(topic,message):
 	print topic+" "+message
 
-client.setname("doraemon")
+client.setalias("doraemon")
 client.on_connect = connection
 client.on_message = subscription
 client.subscribe("/mails")
@@ -57,7 +57,7 @@ arguments
        * [r][w]:&lt;/topic/path&gt; - r และ w คือสิทธิ์ในการ publish ละ subscribe topic ดังที่ระบุ เช่น rw:/outdoor/temp
        *  name:&lt;gearname&gt; - คือสิทธิ์ในการตั้งชื่อตัวเองว่า &lt;gearname&gt;
        *  chat:&lt;gearname&gt; - คือสิทธ์ในการ chat กับ &lt;gearname&gt;
-   * *label* string - กำหนดข้อความฉลากสำหรับแสดงที่หน้า key management
+   * *alias* string - กำหนดชื่อเรียกสำหรับ microgear นี้ โดยจะปรากฎที่หน้า key management และสามารถเป็นชื่อที่ microgear ตัวอื่นใช้สำหรับ `chat()` ได้
 
 ในขั้นตอนของการสร้าง key บนเว็บ netpie.io นักพัฒนาสามารถกำหนดสิทธิ์ขั้นพื้นฐานให้แต่ละ key ได้อยู่แล้ว หากการ create microgear อยู่ภายใต้ขอบเขตของสิทธิ์ที่มี token จะถูกจ่ายอัตโนมัติ และ microgear จะสามารถเชื่อมต่อ netpie platform ได้ทันที แต่หาก scope ที่ร้องขอนั้นมากเกินกว่าสิทธิ์ที่กำหนดไว้ นักพัฒนาจะได้รับ notification ให้พิจารณาอนุมัติ microgear ที่เข้ามาขอเชื่อมต่อ ข้อควรระวัง หาก microgear มีการกระทำการเกินกว่าสิทธิ์ที่ได้รับไป เช่น พยายามจะ publish ไปยัง topic ที่ตัวเองไม่มีสิทธิ์ netpie จะตัดการเชื่อมต่อของ microgear โดยอัตโนมัติ ในกรณีที่ใช้ APPKEY เป็น gearkey เราสามารถละเว้น attribute นี้ได้ เพราะ APPKEY จะได้สิทธิ์ทุกอย่างในฐานะของเจ้าของ app โดย default อยู่แล้ว 
 
@@ -67,7 +67,7 @@ gearkey = <gearkey>
 gearsecret =  <gearsecret>
 appid = <appid>
 
-client.create(gearkey,gearsecret,appid, {'debugmode': True, 'scope': "r:/outdoor/temp,w:/outdoor/valve,name:logger,chat:plant", 'labe': "logger"})
+client.create(gearkey,gearsecret,appid, {'debugmode': True, 'scope': "r:/outdoor/temp,w:/outdoor/valve,name:logger,chat:plant", 'alias': "logger"})
 ```
 
 
@@ -93,10 +93,20 @@ client.connect(True)
 
 
 
+**client.setalias(*alias*):** กำหนดชื่อเรียกสำหรับ microgear นี้ โดยจะปรากฎที่หน้า key management และสามารถเป็นชื่อที่ microgear ตัวอื่นใช้สำหรับ `chat()` ได้
 
+argument
+
+* *alias* `string` - ชื่อของ microgear นี้
+
+
+
+```python
+client.setalias("python");
+```
 
 **client.setname(*gearname*):** microgear สามารถตั้งชื่อตัวเองได้
-ซึ่งสามารถใช้เป็นชื่อเรียกในการใช้ฟังก์ชั่น chat()
+ซึ่งสามารถใช้เป็นชื่อเรียกในการใช้ฟังก์ชั่น chat() **แนะนำให้ใช้ `setalias()` แทน**
 
 argument
 
@@ -249,19 +259,35 @@ client.on_absent = callback_absent
 
 ```
 
-**client.on_reject** event นี้จะเกิดขึ้นเมื่อมี key ของ microgear ถูก reject
+**client.on_warning** เป็น event ที่เกิดมีเหตุการณ์บางอย่างเกิดขึ้นขึ้น และมีการเตือนให้ทราบ
 
 ค่าที่ set
 
 
 * *callback* `function` - จะทำงานเมื่อเกิดเหตุการณ์นี้ โดยจะรับค่า parameter คือ
-    * *msg* - ระบุ status ที่เกี่ยวข้องกับเหตุการณ์นี้
+    * *msg* - ระบุข้อความ ที่เกี่ยวข้องกับเหตุการณ์นี้
 
 
 ```python
-def callback_reject(msg) :
+def callback_warning(msg) :
 	print msg
-client.on_reject = callback_reject
+client.on_warning = callback_warning
+
+```
+
+**client.on_info** เป็น event ที่เกิดมีเหตุการณ์บางอย่างเกิดขึ้นขึ้นภายใน microgear
+
+ค่าที่ set
+
+
+* *callback* `function` - จะทำงานเมื่อเกิดเหตุการณ์นี้ โดยจะรับค่า parameter คือ
+    * *msg* - ระบุข้อความ ที่เกี่ยวข้องกับเหตุการณ์นี้
+
+
+```python
+def callback_info(msg) :
+	print msg
+client.on_info = callback_info
 
 ```
 
