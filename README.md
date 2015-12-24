@@ -135,12 +135,13 @@ client.chat("html","hello from python");
 
 
 
-**client.publish(*topic*, *message*):** ในกรณีที่ต้องการส่งข้อความแบบไม่เจาะจงผู้รับ สามารถใช้ฟังชั่น publish ไปยัง topic ที่กำหนดได้ ซึ่งจะมีแต่ microgear ที่ subscribe topoic นี้เท่านั้น ที่จะได้รับข้อความ
+**client.publish(*topic*, *message*, *retain*):** ในกรณีที่ต้องการส่งข้อความแบบไม่เจาะจงผู้รับ สามารถใช้ฟังชั่น publish ไปยัง topic ที่กำหนดได้ ซึ่งจะมีแต่ microgear ที่ subscribe topoic นี้เท่านั้น ที่จะได้รับข้อความ
 
 arguments
 
 * *topic* `string` - ชื่อของ topic ที่ต้องการจะส่งข้อความไปถึง
 * *message* `string` – ข้อความ
+* *retain* `boolean` - ระบุค่า `True` ถ้าต้องการเก็บข้อความไว้ หากมีการ subscribe topic นี้ก็จะได้รับข้อความนี้อีก ค่าปริยายเป็น `False` หากไม่ระบุ และถ้าต้องการลบข้อความที่บันทึกไว้ให้ส่งข้อความ "" ซึ่งมีความยาวเป็น 0 เพื่อล้างค่าข้อความที่ไว้ทึกไว้
 
 ```python
 client.publish("/outdoor/temp","28.5");

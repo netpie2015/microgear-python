@@ -159,7 +159,7 @@ def auto_subscribeAndpublish():
         logging.error("Microgear currently is not available.")
     if microgear.mqtt_client :
         for topic in publish_list :
-            microgear.mqtt_client.publish(topic[0],topic[1])
+            microgear.mqtt_client.publish(topic[0],topic[1],retain=topic[2].get('retain',False))
             publish_list = []
     else:
         on_error("Microgear currently is not available.")
@@ -204,22 +204,22 @@ def unsubscribe(topic):
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
 
-def publish_thread(topic,message):
+def publish_thread(topic,message,retain=False):
     if microgear.mqtt_client :
-        microgear.mqtt_client.publish(topic,message)
+        microgear.mqtt_client.publish(topic,message,retain=retain)
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
 
-def publish(topic,message):
+def publish(topic,message,retain=False):
     global publish_list
     threads = []
     if microgear.mqtt_client:
-        t = threading.Thread(target=publish_thread, args=("/"+microgear.appid+topic,message,))
+        t = threading.Thread(target=publish_thread, args=("/"+microgear.appid+topic,message,retain))
         threads.append(t)
         t.start()
     else:
-        publish_list.append(["/"+microgear.appid+topic,message])
+        publish_list.append(["/"+microgear.appid+topic,message,{'retain': retain}])
 
 def setname(topic):
     logging.warning("Deprecated soon: Please consider using setalias()")
@@ -277,7 +277,7 @@ def get_requesttoken(cached):
     h = httplib2.Http(".cache")
     resp, content = h.request(microgear.gearauthrequesttokenendpoint, method=method,
             headers=headers)
-    parsed_resp = parse_qs(content)
+    parsed_resp = parse_qs(content.decode(encoding='UTF-8'))
     if resp.status == 200:
         cached["requesttoken"] = {
             "token": parsed_resp['oauth_token'][0],
@@ -308,7 +308,7 @@ def get_accesstoken(cached):
     h = httplib2.Http(".cache")
     resp, content = h.request(microgear.gearauthaccesstokenendpoint, method=method,
             headers=headers)
-    parsed_resp = parse_qs(content)
+    parsed_resp = parse_qs(content.decode(encoding='UTF-8'))
     if resp.status == 200:
         revokecode = hmac(parsed_resp['oauth_token_secret'][0]+"&"+microgear.gearsecret,parsed_resp['oauth_token'][0]).replace('/','_')
         cached["requesttoken"] = None
