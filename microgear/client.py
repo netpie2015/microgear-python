@@ -6,9 +6,11 @@ from microgear import cache
 try:
     from urllib.parse import urlencode
     from urllib.parse import unquote
+    from urllib.parse import parse_qs
 except ImportError:
     from urllib import urlencode
     from urllib import unquote
+    from urlparse import parse_qs
 import httplib2
 import random
 import time
@@ -31,7 +33,8 @@ on_absent = do_nothing
 on_connect = do_nothing
 on_message = do_nothing
 on_error = do_nothing
-on_reject = do_nothing
+on_warning = do_nothing
+on_info = do_nothing
 
 def create(gearkey,gearsecret, appid="", args = {}):
     if 'debugmode' in args:
@@ -44,7 +47,7 @@ def create(gearkey,gearsecret, appid="", args = {}):
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%d/%m/%Y %I:%M:%S %p',
                         )
-
+    microgear.gearalias = args.get('alias',"")[0:16]
     if 'scope' in args:
         matchScope = re.match( r'^(\w+:[a-zA-Z\/]+,*)+$', args['scope'])
         if matchScope:
@@ -64,27 +67,27 @@ def client_on_connect(client, userdata, rc):
         on_connect()
         auto_subscribeAndpublish()
     elif rc == 1 :
-        on_reject("Incorrect protocol version.")
-        logging.warning("Incorrect protocol version.")
+        logging.warning("Unable to connect: Incorrect protocol version.")
     elif rc == 2 :
-        on_reject("Invalid client identifier.")
-        logging.warning("Invalid client identifier.")
+        logging.warning("Unable to connect: Invalid client identifier.")
     elif rc == 3 :
-        on_reject("Server unavailable.")
-        logging.warning("Server unavailable.")
+        logging.warning("Unable to connect: Server unavailable.")
     elif rc == 4 :
         unsubscribe(current_id)
         microgear.mqtt_client.disconnect()
-        on_reject("Bad username or password.")
-        logging.warning("Bad username or password.")
+        on_info("Invalid credential.")
+        logging.info("Unable to connect: Invalid credential, requesting new one")
         resettoken()
         connect(block_loop)
     elif rc == 5 :
-        on_reject("Not authorised.")
-        logging.warning("Not authorised.")
+        on_warning("Not authorised.")
+        logging.warning("Unable to connect: Not authorised.")
     else:
-        on_reject("Unknown reason")
-        logging.warning("Unknown reason")
+        logging.warning("Unable to connect: Unknown reason")
+
+def client_on_publish(client, userdata, mid):
+    #Publish callback
+    pass
 
 def client_on_message(client, userdata, msg):
     topics = msg.topic.split("/")
@@ -92,6 +95,9 @@ def client_on_message(client, userdata, msg):
         on_present(str(msg.payload))
     elif topics[2] == "&absent":
         on_absent(str(msg.payload))
+    elif '&id' in topics[2]:
+        #controll message
+        pass
     else:
         on_message(msg.topic,str(msg.payload))
 
@@ -105,7 +111,7 @@ def client_on_disconnect(client, userdata, rc):
         logging.debug("Diconnected with result code "+str(rc))
 
 def connect(block=False):
-    global block_loop 
+    global block_loop
     block_loop = block
     global current_subscribe_list
     global current_id
@@ -125,6 +131,7 @@ def connect(block=False):
 
     microgear.mqtt_client.on_connect = client_on_connect
     microgear.mqtt_client.on_message = client_on_message
+    microgear.mqtt_client.on_publish = client_on_publish
     microgear.mqtt_client.on_subscribe = client_on_subscribe
     microgear.mqtt_client.on_disconnect = client_on_disconnect
 
@@ -139,6 +146,8 @@ def connect(block=False):
 def auto_subscribeAndpublish():
     global publish_list
     global current_subscribe_list
+    if len(microgear.gearalias):
+        setalias(microgear.gearalias)
     if microgear.mqtt_client:
         microgear.mqtt_client.subscribe("/"+microgear.appid+"/&present")
         microgear.mqtt_client.subscribe("/"+microgear.appid+"/&absent")
@@ -150,7 +159,7 @@ def auto_subscribeAndpublish():
         logging.error("Microgear currently is not available.")
     if microgear.mqtt_client :
         for topic in publish_list :
-            microgear.mqtt_client.publish(topic[0],topic[1])
+            microgear.mqtt_client.publish(topic[0],topic[1],retain=topic[2].get('retain',False))
             publish_list = []
     else:
         on_error("Microgear currently is not available.")
@@ -178,7 +187,7 @@ def subscribe(topic):
         t.start()
     else:
         subscribe_list.append("/"+microgear.appid+topic)
-        
+
 
 def unsubscribe(topic):
     global current_subscribe_list
@@ -195,26 +204,30 @@ def unsubscribe(topic):
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
 
-def publish_thread(topic,message):
+def publish_thread(topic,message,retain=False):
     if microgear.mqtt_client :
-        microgear.mqtt_client.publish(topic,message)
+        microgear.mqtt_client.publish(topic,message,retain=retain)
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
 
-def publish(topic,message):
+def publish(topic,message,retain=False):
     global publish_list
     threads = []
     if microgear.mqtt_client:
-        t = threading.Thread(target=publish_thread, args=("/"+microgear.appid+topic,message,))
+        t = threading.Thread(target=publish_thread, args=("/"+microgear.appid+topic,message,retain))
         threads.append(t)
         t.start()
     else:
-        publish_list.append(["/"+microgear.appid+topic,message])
+        publish_list.append(["/"+microgear.appid+topic,message,{'retain': retain}])
 
 def setname(topic):
+    logging.warning("Deprecated soon: Please consider using setalias()")
     microgear.gearname = topic
     subscribe("/gearname/"+topic)
+
+def setalias(alias):
+    publish("/@setalias/"+alias,"")
 
 def chat(topic,message):
     publish("/gearname/"+topic,message)
@@ -228,33 +241,35 @@ def writestream(stream,data):
 def get_token():
     logging.debug("Check stored token.")
     cached = cache.get_item("microgear.cache")
-    if cached and cached.get("accesstoken"):
-        microgear.accesstoken = cached.get("accesstoken")
-        for name,value in microgear.accesstoken.items():
-            microgear.accesstoken[name] = str(value)
-    else:
-        cached = cache.set_item("microgear.cache", {})
-        cached["key"] = microgear.gearkey
-        cache.set_item("microgear.cache", cached)
-
-    if microgear.accesstoken:
-        endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
-        microgear.gearexaddress = endpoint[0]
-        microgear.gearexport = endpoint[1]
-    else:
-        if cached.get("requesttoken"):
+    if cached:
+        if cached.get("accesstoken"):
+            if not cached.get("key"):
+                cached["key"] = microgear.gearkey
+                cache.set_item("microgear.cache", cached)
+            microgear.accesstoken = cached.get("accesstoken")
+            for name,value in microgear.accesstoken.items():
+                microgear.accesstoken[name] = str(value)
+            endpoint = microgear.accesstoken.get("endpoint").split("//")[1].split(":")
+            microgear.gearexaddress = endpoint[0]
+            microgear.gearexport = endpoint[1]
+        elif cached.get("requesttoken"):
             get_accesstoken(cached)
         else:
             get_requesttoken(cached)
+    else:
+        cached = cache.set_item("microgear.cache", {"key": microgear.gearkey})
 
 def get_requesttoken(cached):
     logging.debug("Requesting a request token.")
     consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
     client = oauth.Client(consumer)
-    verifier = ''.join(random.sample(string.ascii_lowercase+string.digits,8))
+    if len(microgear.gearalias):
+        verifier = microgear.gearalias
+    else:
+        verifier = microgear.mgrev
     headers = {}
     method = "POST"
-    params = {'oauth_callback': "scope=%s&appid=%s&verifier=%s" % (microgear.scope, microgear.appid, verifier)}
+    params = {'oauth_callback': "scope=%s&mgrev=%s&appid=%s&verifier=%s" % (microgear.scope, microgear.mgrev, microgear.appid, verifier)}
     req = oauth.Request.from_consumer_and_token(consumer, http_method=method,
             http_url=microgear.gearauthrequesttokenendpoint, parameters=params)
     req.sign_request(oauth.SignatureMethod_HMAC_SHA1(), consumer, None)
@@ -262,13 +277,11 @@ def get_requesttoken(cached):
     h = httplib2.Http(".cache")
     resp, content = h.request(microgear.gearauthrequesttokenendpoint, method=method,
             headers=headers)
-    content = content.decode('UTF-8')
-    matchContent = re.match( r'oauth_token=(.*?)&oauth_token_secret=(.*?).*', content)
-    if matchContent:
-        contents = content.split("&")
+    parsed_resp = parse_qs(content.decode(encoding='UTF-8'))
+    if resp.status == 200:
         cached["requesttoken"] = {
-            "token": contents[0].split("=")[1],
-            "secret": contents[1].split("=")[1],
+            "token": parsed_resp['oauth_token'][0],
+            "secret": parsed_resp['oauth_token_secret'][0],
             "verifier": verifier
         }
         cache.set_item("microgear.cache", cached)
@@ -280,9 +293,7 @@ def get_requesttoken(cached):
 
 def get_accesstoken(cached):
     microgear.requesttoken = cached.get("requesttoken")
-    #send requesttoken to obtain accesstoken
     logging.debug("Already has request token.")
-    #logging.debug(json.dumps(microgear.requesttoken))
     logging.debug("Requesting an access token.")
     token = oauth.Token(key=microgear.requesttoken.get("token"), secret=microgear.requesttoken.get("secret"))
     consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
@@ -297,21 +308,24 @@ def get_accesstoken(cached):
     h = httplib2.Http(".cache")
     resp, content = h.request(microgear.gearauthaccesstokenendpoint, method=method,
             headers=headers)
-    content = content.decode('UTF-8')
-    matchContent = re.match( r'endpoint=(.*?)&oauth_token=(.*?)&oauth_token_secret=(.*?).*', content)
-    if matchContent:
-        contents = content.split("&")
-        revokecode = hmac(contents[2].split("=")[1]+"&"+microgear.gearsecret,contents[1].split("=")[1]).replace('/','_')
+    parsed_resp = parse_qs(content.decode(encoding='UTF-8'))
+    if resp.status == 200:
+        revokecode = hmac(parsed_resp['oauth_token_secret'][0]+"&"+microgear.gearsecret,parsed_resp['oauth_token'][0]).replace('/','_')
         cached["requesttoken"] = None
         cached["accesstoken"] = {
-            "token": contents[1].split("=")[1],
-            "secret": contents[2].split("=")[1],
-            "endpoint": unquote(contents[0].split("=")[1]),
+            "token": parsed_resp['oauth_token'][0],
+            "secret": parsed_resp['oauth_token_secret'][0],
+            "endpoint": parsed_resp['endpoint'][0],
             "revokecode": revokecode
         }
-        cache.set_item("microgear.cache", cached)
+        flag = parsed_resp.get('flag',["P"])
+        if flag[0] == "P":
+            cache.set_item("microgear.cache", cached)
+        elif flag[0] == "S":
+            cache.set_item("microgear.cache", {})
         microgear.accesstoken = cached["accesstoken"]
     else:
+        resettoken()
         on_error("Access token is not issued, please check your consumerkey and consumersecret.")
         logging.error("Access token is not issued, please check your consumerkey and consumersecret.")
 
@@ -330,7 +344,7 @@ def hmac(key, message):
 def resettoken():
     cached = cache.get_item("microgear.cache")
     if cached :
-        microgear.accesstoken = cached["accesstoken"]
+        microgear.accesstoken = cached.get("accesstoken",{})
         if "revokecode" in microgear.accesstoken :
             path = "/api/revoke/"+microgear.accesstoken["token"]+"/"+microgear.accesstoken["revokecode"]
             h = httplib2.Http(".cache")
