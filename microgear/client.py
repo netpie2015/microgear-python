@@ -353,7 +353,7 @@ def resettoken():
         if "revokecode" in microgear.accesstoken :
             path = "/api/revoke/"+microgear.accesstoken["token"]+"/"+microgear.accesstoken["revokecode"]
             h = httplib2.Http(".cache")
-            resp, content = h.request("http://gearauth.netpie.io:8080"+path, method="GET")
+            resp, content = h.request(gearauthsite+path, method="GET")
             if(resp.status==200):
                 cache.delete_item("microgear.cache")
             else:

@@ -1,5 +1,5 @@
 import logging
-__version__ = '1.1.12'
+__version__ = '1.1.13'
 
 gearauthsite = "http://ga.netpie.io:8080"
 gearauthrequesttokenendpoint = gearauthsite+"/api/rtoken"
