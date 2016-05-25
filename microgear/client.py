@@ -136,7 +136,9 @@ def connect(block=False):
     microgear.mqtt_client.on_disconnect = client_on_disconnect
 
     if(block):
+
         microgear.mqtt_client.loop_forever()
+
     else:
         microgear.mqtt_client.loop_start()
         while True:
@@ -154,9 +156,11 @@ def auto_subscribeAndpublish():
         for topic in current_subscribe_list :
             microgear.mqtt_client.subscribe(topic)
             logging.debug("Auto subscribe "+topic)
+    
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
+
     if microgear.mqtt_client :
         for topic in publish_list :
             microgear.mqtt_client.publish(topic[0],topic[1],retain=topic[2].get('retain',False))
@@ -164,6 +168,7 @@ def auto_subscribeAndpublish():
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
+
 
 
 def subscribe_thread(topic):
@@ -348,7 +353,7 @@ def resettoken():
         if "revokecode" in microgear.accesstoken :
             path = "/api/revoke/"+microgear.accesstoken["token"]+"/"+microgear.accesstoken["revokecode"]
             h = httplib2.Http(".cache")
-            resp, content = h.request("http://gearauth.netpie.io:8080"+path, method="GET")
+            resp, content = h.request(gearauthsite+path, method="GET")
             if(resp.status==200):
                 cache.delete_item("microgear.cache")
             else:
