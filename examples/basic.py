@@ -1,12 +1,12 @@
-import microgear.client as client
+import microgear.client as microgear
 import time
 import logging
 
+appid = <appid>
 gearkey = <gearkey>
 gearsecret =  <gearsecret>
-appid = <appid>
 
-client.create(gearkey,gearsecret,appid,{'debugmode': True})
+microgear.create(gearkey,gearsecret,appid,{'debugmode': True})
 
 def connection():
     logging.debug("Now I am connected with netpie")
@@ -14,13 +14,16 @@ def connection():
 def subscription(topic,message):
     logging.debug(topic+" "+message)
 
-client.setname("doraemon")
-client.on_connect = connection
-client.on_message = subscription
-client.subscribe("/mails")
+def disconnect():
+	logging.debug("disconnect is work")
 
-client.connect(False)
+microgear.setalias("doraemon")
+microgear.on_connect = connection
+microgear.on_message = subscription
+microgear.on_disconnect = disconnect
+microgear.subscribe("/mails")
+microgear.connect(False)
 
 while True:
-    client.chat("doraemon","Hello world."+str(int(time.time())))
+    microgear.chat("doraemon","Hello world."+str(int(time.time())))
     time.sleep(2)
