@@ -27,7 +27,7 @@ current_subscribe_list = []
 current_id =None
 publish_list = []
 block_loop = False
-on_disconnect = do_nothing
+
 on_present = do_nothing
 on_absent = do_nothing
 on_connect = do_nothing
@@ -35,6 +35,7 @@ on_message = do_nothing
 on_error = do_nothing
 on_warning = do_nothing
 on_info = do_nothing
+on_disconnect = do_nothing
 
 def create(gearkey,gearsecret, appid="", args = {}):
     if 'debugmode' in args:
@@ -122,7 +123,7 @@ def connect(block=False):
         times = times+10
     microgear.mqtt_client = mqtt.Client(microgear.accesstoken["token"])
     current_id = '/&id/'+str(microgear.accesstoken["token"])+'/#'
-    current_subscribe_list.append('/&id/'+str(microgear.accesstoken["token"])+'/#')
+    current_subscribe_list.append(['/&id/'+str(microgear.accesstoken["token"])+'/#',{'qos':0}])
     endpoint = microgear.accesstoken["endpoint"].split("//")[1].split(":")
     username = microgear.gearkey+"%"+str(int(time.time()))
     password = hmac(microgear.accesstoken["secret"]+"&"+microgear.gearsecret,microgear.accesstoken["token"]+"%"+username)
@@ -136,9 +137,7 @@ def connect(block=False):
     microgear.mqtt_client.on_disconnect = client_on_disconnect
 
     if(block):
-
         microgear.mqtt_client.loop_forever()
-
     else:
         microgear.mqtt_client.loop_start()
         while True:
@@ -154,8 +153,8 @@ def auto_subscribeAndpublish():
         microgear.mqtt_client.subscribe("/"+microgear.appid+"/&present")
         microgear.mqtt_client.subscribe("/"+microgear.appid+"/&absent")
         for topic in current_subscribe_list :
-            microgear.mqtt_client.subscribe(topic)
-            logging.debug("Auto subscribe "+topic)
+            microgear.mqtt_client.subscribe(topic[0],qos=topic[1].get('qos',0))
+            logging.debug("Auto subscribe "+topic[0])
     
     else:
         on_error("Microgear currently is not available.")
@@ -171,60 +170,70 @@ def auto_subscribeAndpublish():
 
 
 
-def subscribe_thread(topic):
+def subscribe_thread(topic,args = {}):
+    qos = 0
+
+    if 'qos' in args:
+        qos = args['qos']
+
     if microgear.mqtt_client :
         logging.debug("Auto subscribe "+topic)
-        microgear.mqtt_client.subscribe(topic)
+        microgear.mqtt_client.subscribe(topic,qos)
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
 
-def subscribe(topic):
+def subscribe(topic,args = {}):
     global subscribe_list
     global current_subscribe_list
     threads = []
     if "/"+microgear.appid+topic not in current_subscribe_list:
-        current_subscribe_list.append("/"+microgear.appid+topic)
+        current_subscribe_list.append(["/"+microgear.appid+topic,args])
 
     if microgear.mqtt_client:
-        t = threading.Thread(target=subscribe_thread, args=("/"+microgear.appid+topic,))
+        t = threading.Thread(target=subscribe_thread, args=("/"+microgear.appid+topic,args))
         threads.append(t)
         t.start()
     else:
-        subscribe_list.append("/"+microgear.appid+topic)
+        subscribe_list.append(["/"+microgear.appid+topic,args])
 
 
 def unsubscribe(topic):
     global current_subscribe_list
     global current_id
     if microgear.mqtt_client:
-        if topic == current_id:
-            current_subscribe_list.remove(current_id)
-            microgear.mqtt_client.unsubscribe(current_id)
-        if "/"+microgear.appid+topic in current_subscribe_list:
-            current_subscribe_list.remove("/"+microgear.appid+topic)
-            microgear.mqtt_client.unsubscribe("/"+microgear.appid+topic)
+        microgear.mqtt_client.unsubscribe(topic)
         logging.debug("Auto unsubscribe "+topic)
     else:
-        on_error("Microgear currently is not available.")
-        logging.error("Microgear currently is not available.")
+        for item in current_subscribe_list :
+            if "/"+microgear.appid+topic in item:
+                current_subscribe_list.remove(item)
 
-def publish_thread(topic,message,retain=False):
+def publish_thread(topic,message,args = {}):
+    qos = 0
+    retain = False
+
+    if 'qos' in args:
+        gos = args['qos']
+
+    if 'retain' in args:
+        retain = args['retain']
+
     if microgear.mqtt_client :
-        microgear.mqtt_client.publish(topic,message,retain=retain)
+        microgear.mqtt_client.publish(topic,message,qos=qos,retain=retain)
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
 
-def publish(topic,message,retain=False):
+def publish(topic,message,args = {}):
     global publish_list
     threads = []
     if microgear.mqtt_client:
-        t = threading.Thread(target=publish_thread, args=("/"+microgear.appid+topic,message,retain))
+        t = threading.Thread(target=publish_thread, args=("/"+microgear.appid+topic,message,args))
         threads.append(t)
         t.start()
     else:
-        publish_list.append(["/"+microgear.appid+topic,message,{'retain': retain}])
+        publish_list.append(["/"+microgear.appid+topic,message,args])
 
 def setname(topic):
     logging.warning("Deprecated soon: Please consider using setalias()")
@@ -363,3 +372,6 @@ def resettoken():
             cache.delete_item("microgear.cache")
             logging.warning("Token is still, please check your key on Key Management.")
         microgear.accesstoken = None
+
+def disconnect():
+    microgear.mqtt_client.disconnect();

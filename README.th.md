@@ -14,27 +14,30 @@ $ pip install microgear
 ##ตัวอย่างการเรียกใช้งาน
 -----------
 ```python
-import microgear.client as client
+import microgear.client as microgear
 import time
 
+appid = <appid>
 gearkey = <gearkey>
 gearsecret =  <gearsecret>
-appid = <appid>
 
-client.create(gearkey,gearsecret,appid)
+microgear.create(gearkey,gearsecret,appid,{'debugmode': True})
 
 def connection():
-	print "Now I am connected with netpie"
+  print "Now I am connected with netpie"
 
 def subscription(topic,message):
-	print topic+" "+message
+  print topic+" "+message
 
-client.setalias("doraemon")
-client.on_connect = connection
-client.on_message = subscription
-client.subscribe("/mails")
+def disconnect():
+  print "disconnect is work"
 
-client.connect(True)
+microgear.setalias("doraemon")
+microgear.on_connect = connection
+microgear.on_message = subscription
+microgear.on_disconnect = disconnect
+microgear.subscribe("/mails")
+microgear.connect(True)
 
 ```
 [ตัวอย่างเพิ่มเติม](https://github.com/netpieio/microgear-python/wiki#%E0%B8%95%E0%B8%B1%E0%B8%A7%E0%B8%AD%E0%B8%A2%E0%B9%88%E0%B8%B2%E0%B8%87%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B9%83%E0%B8%8A%E0%B9%89%E0%B8%87%E0%B8%B2%E0%B8%99)
