@@ -18,13 +18,15 @@ import re
 import string
 import paho.mqtt.client as mqtt
 import threading
+import os
+import sys
 
 def do_nothing(arg1=None, arg2=None):
     pass
 
 subscribe_list = []
 current_subscribe_list = []
-current_id =None
+current_id = None
 publish_list = []
 block_loop = False
 
@@ -107,9 +109,10 @@ def client_on_subscribe(client, userdata, mid, granted_qos):
     pass
 
 def client_on_disconnect(client, userdata, rc):
-    on_disconnect()
     if rc!=0:
+        on_disconnect()
         logging.debug("Diconnected with result code "+str(rc))
+
 
 def connect(block=False):
     global block_loop
@@ -123,7 +126,7 @@ def connect(block=False):
         times = times+10
     microgear.mqtt_client = mqtt.Client(microgear.accesstoken["token"])
     current_id = '/&id/'+str(microgear.accesstoken["token"])+'/#'
-    current_subscribe_list.append(['/&id/'+str(microgear.accesstoken["token"])+'/#',{'qos':0}])
+    current_subscribe_list.append('/&id/'+str(microgear.accesstoken["token"])+'/#')
     endpoint = microgear.accesstoken["endpoint"].split("//")[1].split(":")
     username = microgear.gearkey+"%"+str(int(time.time()))
     password = hmac(microgear.accesstoken["secret"]+"&"+microgear.gearsecret,microgear.accesstoken["token"]+"%"+username)
@@ -153,8 +156,8 @@ def auto_subscribeAndpublish():
         microgear.mqtt_client.subscribe("/"+microgear.appid+"/&present")
         microgear.mqtt_client.subscribe("/"+microgear.appid+"/&absent")
         for topic in current_subscribe_list :
-            microgear.mqtt_client.subscribe(topic[0],qos=topic[1].get('qos',0))
-            logging.debug("Auto subscribe "+topic[0])
+            microgear.mqtt_client.subscribe(topic)
+            logging.debug("Auto subscribe "+topic)
     
     else:
         on_error("Microgear currently is not available.")
@@ -170,12 +173,7 @@ def auto_subscribeAndpublish():
 
 
 
-def subscribe_thread(topic,args = {}):
-    qos = 0
-
-    if 'qos' in args:
-        qos = args['qos']
-
+def subscribe_thread(topic,qos=0):
     if microgear.mqtt_client :
         logging.debug("Auto subscribe "+topic)
         microgear.mqtt_client.subscribe(topic,qos)
@@ -183,31 +181,35 @@ def subscribe_thread(topic,args = {}):
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
 
-def subscribe(topic,args = {}):
+def subscribe(topic,qos=0):
     global subscribe_list
     global current_subscribe_list
     threads = []
     if "/"+microgear.appid+topic not in current_subscribe_list:
-        current_subscribe_list.append(["/"+microgear.appid+topic,args])
+        current_subscribe_list.append("/"+microgear.appid+topic)
 
     if microgear.mqtt_client:
-        t = threading.Thread(target=subscribe_thread, args=("/"+microgear.appid+topic,args))
+        t = threading.Thread(target=subscribe_thread, args=("/"+microgear.appid+topic,qos))
         threads.append(t)
         t.start()
     else:
-        subscribe_list.append(["/"+microgear.appid+topic,args])
+        subscribe_list.append("/"+microgear.appid+topic)
 
 
 def unsubscribe(topic):
     global current_subscribe_list
     global current_id
     if microgear.mqtt_client:
-        microgear.mqtt_client.unsubscribe(topic)
+        if topic == current_id:
+            current_subscribe_list.remove(current_id)
+            microgear.mqtt_client.unsubscribe(current_id)
+        if "/"+microgear.appid+topic in current_subscribe_list:
+            current_subscribe_list.remove("/"+microgear.appid+topic)
+            microgear.mqtt_client.unsubscribe("/"+microgear.appid+topic)
         logging.debug("Auto unsubscribe "+topic)
     else:
-        for item in current_subscribe_list :
-            if "/"+microgear.appid+topic in item:
-                current_subscribe_list.remove(item)
+        on_error("Microgear currently is not available.")
+        logging.error("Microgear currently is not available.")
 
 def publish_thread(topic,message,args = {}):
     qos = 0
@@ -254,12 +256,12 @@ def writestream(stream,data):
 
 def get_token():
     logging.debug("Check stored token.")
-    cached = cache.get_item("microgear.cache")
+    cached = cache.get_item("microgear-"+microgear.gearkey+".cache")
     if cached:
         if cached.get("accesstoken"):
             if not cached.get("key"):
                 cached["key"] = microgear.gearkey
-                cache.set_item("microgear.cache", cached)
+                cache.set_item("microgear-"+microgear.gearkey+".cache", cached)
             microgear.accesstoken = cached.get("accesstoken")
             for name,value in microgear.accesstoken.items():
                 microgear.accesstoken[name] = str(value)
@@ -271,7 +273,7 @@ def get_token():
         else:
             get_requesttoken(cached)
     else:
-        cached = cache.set_item("microgear.cache", {"key": microgear.gearkey})
+        cached = cache.set_item("microgear-"+microgear.gearkey+".cache", {"key": microgear.gearkey})
 
 def get_requesttoken(cached):
     logging.debug("Requesting a request token.")
@@ -288,7 +290,7 @@ def get_requesttoken(cached):
             http_url=microgear.gearauthrequesttokenendpoint, parameters=params)
     req.sign_request(oauth.SignatureMethod_HMAC_SHA1(), consumer, None)
     headers.update(req.to_header(realm="NETPIE"))
-    h = httplib2.Http(".cache")
+    h = httplib2.Http(os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),".cache"))
     resp, content = h.request(microgear.gearauthrequesttokenendpoint, method=method,
             headers=headers)
     parsed_resp = parse_qs(content.decode(encoding='UTF-8'))
@@ -298,7 +300,7 @@ def get_requesttoken(cached):
             "secret": parsed_resp['oauth_token_secret'][0],
             "verifier": verifier
         }
-        cache.set_item("microgear.cache", cached)
+        cache.set_item("microgear-"+microgear.gearkey+".cache", cached)
         microgear.requesttoken = cached["requesttoken"]
         get_accesstoken(cached)
     else:
@@ -319,7 +321,7 @@ def get_accesstoken(cached):
             http_url=microgear.gearauthaccesstokenendpoint, parameters=params)
     req.sign_request(oauth.SignatureMethod_HMAC_SHA1(), consumer, token)
     headers.update(req.to_header(realm="NETPIE"))
-    h = httplib2.Http(".cache")
+    h = httplib2.Http(os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),".cache"))
     resp, content = h.request(microgear.gearauthaccesstokenendpoint, method=method,
             headers=headers)
     parsed_resp = parse_qs(content.decode(encoding='UTF-8'))
@@ -334,9 +336,9 @@ def get_accesstoken(cached):
         }
         flag = parsed_resp.get('flag',["P"])
         if flag[0] == "P":
-            cache.set_item("microgear.cache", cached)
+            cache.set_item("microgear-"+microgear.gearkey+".cache", cached)
         elif flag[0] == "S":
-            cache.set_item("microgear.cache", {})
+            cache.set_item("microgear-"+microgear.gearkey+".cache", {})
         microgear.accesstoken = cached["accesstoken"]
     else:
         resettoken()
@@ -356,20 +358,20 @@ def hmac(key, message):
     return password.decode('utf-8')
 
 def resettoken():
-    cached = cache.get_item("microgear.cache")
+    cached = cache.get_item("microgear-"+microgear.gearkey+".cache")
     if cached :
         microgear.accesstoken = cached.get("accesstoken",{})
         if "revokecode" in microgear.accesstoken :
             path = "/api/revoke/"+microgear.accesstoken["token"]+"/"+microgear.accesstoken["revokecode"]
-            h = httplib2.Http(".cache")
+            h = httplib2.Http(os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),".cache"))
             resp, content = h.request(microgear.gearauthsite+path, method="GET")
             if(resp.status==200):
-                cache.delete_item("microgear.cache")
+                cache.delete_item("microgear-"+microgear.gearkey+".cache")
             else:
                 on_error("Reset token error.")
                 logging.error("Reset token error.")
         else:
-            cache.delete_item("microgear.cache")
+            cache.delete_item("microgear-"+microgear.gearkey+".cache")
             logging.warning("Token is still, please check your key on Key Management.")
         microgear.accesstoken = None
 
