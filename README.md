@@ -143,10 +143,12 @@ arguments
 
 * *topic* `string` - name of topic to be send a message to. 
 * *message* `string` - message to be sent.
-* *retain* `boolean` - retain a message or not (the default is `False`) If `True`, the message is kept.  To remove the retained message, publish an empty message or  "" which is a message with length 0. 
+* *args* `dictionary` - sets additional options for  microgear
+  * *retain* `boolean` - retain a message or not (the default is `False`) If `True`, the message is kept.  To remove the retained message, publish an empty message or  "" which is a message with length 0. 
 
 ```python
 client.publish("/outdoor/temp","28.5");
+client.publish("/outdoor/temp","28.5",{'retain':True});
 ```
 
 
