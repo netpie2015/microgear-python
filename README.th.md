@@ -15,6 +15,7 @@ $ pip install microgear
 -----------
 ```python
 import microgear.client as microgear
+import logging
 import time
 
 appid = <appid>
@@ -24,13 +25,13 @@ gearsecret =  <gearsecret>
 microgear.create(gearkey,gearsecret,appid,{'debugmode': True})
 
 def connection():
-  print "Now I am connected with netpie"
+    logging.debug("Now I am connected with netpie")
 
 def subscription(topic,message):
-  print topic+" "+message
+    logging.debug(topic+" "+message)
 
 def disconnect():
-  print "disconnect is work"
+    logging.debug("disconnected")
 
 microgear.setalias("doraemon")
 microgear.on_connect = connection
