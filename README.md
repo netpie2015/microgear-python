@@ -177,8 +177,8 @@ arguments
 
 ```python
 data = {"field1":random.randint(1, 10),"field2":random.randint(1, 10),"field3":random.randint(1, 10)}
-microgear.publish("myfeedid",data);
-microgear.publish("myfeedid",data,"myapikey");
+microgear.wrtieFeed("myfeedid",data);
+microgear.wrtieFeed("myfeedid",data,"myapikey");
 ```
 
 
