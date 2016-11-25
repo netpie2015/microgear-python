@@ -2,7 +2,7 @@ from setuptools import setup
 setup(
   name = 'microgear',
   packages = ['microgear'], # this must be the same as the name above
-  version = '1.2.2',
+  version = '1.2.3',
   description = 'Client library of Python, connect application code or hardware to netpie platform.',
   author = 'netpie',
   author_email = 'support@netpie.io',
