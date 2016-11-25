@@ -104,9 +104,9 @@ def client_on_message(client, userdata, msg):
             pass
         else:
             on_message(msg.topic,str(msg.payload))
-    elif msg.topic != "@info":
+    elif msg.topic == "@info":
         on_info(str(msg.payload))
-    elif msg.topic != "@error":
+    elif msg.topic == "@error":
         on_error(str(msg.payload))
 
 def client_on_subscribe(client, userdata, mid, granted_qos):
