@@ -94,15 +94,20 @@ def client_on_publish(client, userdata, mid):
 
 def client_on_message(client, userdata, msg):
     topics = msg.topic.split("/")
-    if topics[2] == "&present":
-        on_present(str(msg.payload))
-    elif topics[2] == "&absent":
-        on_absent(str(msg.payload))
-    elif '&id' in topics[2]:
-        #controll message
-        pass
-    else:
-        on_message(msg.topic,str(msg.payload))
+    if msg.topic != "@info" and msg.topic != "@error":
+        if topics[2] == "&present":
+            on_present(str(msg.payload))
+        elif topics[2] == "&absent":
+            on_absent(str(msg.payload))
+        elif '&id' in topics[2]:
+            #controll message
+            pass
+        else:
+            on_message(msg.topic,str(msg.payload))
+    elif msg.topic != "@info":
+        on_info(str(msg.payload))
+    elif msg.topic != "@error":
+        on_error(str(msg.payload))
 
 def client_on_subscribe(client, userdata, mid, granted_qos):
     ## TODO: Check subscribe fail
@@ -376,3 +381,17 @@ def resettoken():
 
 def disconnect():
     microgear.mqtt_client.disconnect();
+
+def writeFeed(feedid,data,feedkey=""):
+    if len(feedid)>0 and type(data) is dict:
+        json = "{"
+        for key in data:
+            json += "\""+str(key)+"\""+":"+str(data[key])+","
+        json = json[:len(json)-1] + "}"
+        if feedkey == "":
+            microgear.publish("/@writefeed/"+feedid,json)
+        else:
+            microgear.publish("/@writefeed/"+feedid+"/"+feedkey,json)
+        logging.debug(json)
+    else:
+        logging.debug("Invalid parameters, please try again")
