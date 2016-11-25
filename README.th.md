@@ -48,7 +48,7 @@ microgear.connect(True)
 ------------
 ###Microgear
 ---------------
-**client.create(*gearkey*,*gearsecret*,*appid*,*args*):**
+**microgear.create(*gearkey*,*gearsecret*,*appid*,*args*):**
 
 arguments
 
@@ -71,33 +71,33 @@ gearkey = <gearkey>
 gearsecret =  <gearsecret>
 appid = <appid>
 
-client.create(gearkey,gearsecret,appid, {'debugmode': True, 'scope': "r:/outdoor/temp,w:/outdoor/valve,name:logger,chat:plant", 'alias': "logger"})
+microgear.create(gearkey,gearsecret,appid, {'debugmode': True, 'scope': "r:/outdoor/temp,w:/outdoor/valve,name:logger,chat:plant", 'alias': "logger"})
 ```
 
 
 
 
-**client.connect(*will_block*):** การเชื่อมต่อ microgear
+**microgear.connect(*will_block*):** การเชื่อมต่อ microgear
 
 argument
 
 * *will_block* `boolean` - `(optional)` ระบุรูปแบบการเชื่อมต่อ ว่าให้มีการ Block หลังจากเรียกฟังก์ชั่น หรือไม่ ซึ่งจะมีค่า default เป็น `False`  โดยโปรแกรมจะทำงานในบรรทัดถัดไปหลังจากที่ทำการ connect แล้ว ซึ่งจะทำให้ ผู้พัฒนาสามารถ เขียนโปรแกรม ในการติดต่อกับ platfrom ต่อไปได้ โดยการเชื่อมต่อกับ platform จะคงอยู่ เท่าที่มีการทำงานของโปรแกรม เช่น
 
 ```python
-client.connect()
+microgear.connect()
 while True:
-    client.chat("doraemon","Hello world. "+str(int(time.time())))
+    microgear.chat("doraemon","Hello world. "+str(int(time.time())))
     time.sleep(2)
 ```
 หากต้องการให้ library ทำการ Block หลังจากทำการ connect แล้ว ซึ่งหลังจาก connect แล้วโปรแกรมหยุดอยู่ที่การทำงานร่วมกับ platform โดยจะทำงานตามที่มี เหตุการณ์ callback (on_*) ที่ถูกกำหนดไว้ก่อนหน้า โดยสามารถระบุ พารามิเตอร์เป็น `True` ได้ เช่น
 ```python
-client.connect(True)
+microgear.connect(True)
 ```
 
 
 
 
-**client.setalias(*alias*):** กำหนดชื่อเรียกสำหรับ microgear นี้ โดยจะปรากฎที่หน้า key management และสามารถเป็นชื่อที่ microgear ตัวอื่นใช้สำหรับ `chat()` ได้
+**microgear.setalias(*alias*):** กำหนดชื่อเรียกสำหรับ microgear นี้ โดยจะปรากฎที่หน้า key management และสามารถเป็นชื่อที่ microgear ตัวอื่นใช้สำหรับ `chat()` ได้
 
 argument
 
@@ -106,10 +106,10 @@ argument
 
 
 ```python
-client.setalias("python");
+microgear.setalias("python");
 ```
 
-**client.setname(*gearname*):** microgear สามารถตั้งชื่อตัวเองได้
+**microgear.setname(*gearname*):** microgear สามารถตั้งชื่อตัวเองได้
 ซึ่งสามารถใช้เป็นชื่อเรียกในการใช้ฟังก์ชั่น chat() **แนะนำให้ใช้ `setalias()` แทน**
 
 argument
@@ -119,10 +119,10 @@ argument
 
 
 ```python
-client.setname("python");
+microgear.setname("python");
 ```
 
-**client.chat(*gearname*, *message*):** การส่งข้อความโดยระบุ gearname และข้อความที่ต้องการส่ง
+**microgear.chat(*gearname*, *message*):** การส่งข้อความโดยระบุ gearname และข้อความที่ต้องการส่ง
 
 arguments
 
@@ -130,7 +130,7 @@ arguments
 * *message* `string` – ข้อความ
 
 ```python
-client.chat("html","hello from python");
+microgear.chat("html","hello from python");
 ```
 
 
@@ -139,7 +139,7 @@ client.chat("html","hello from python");
 
 
 
-**client.publish(*topic*, *message*, *retain*):** ในกรณีที่ต้องการส่งข้อความแบบไม่เจาะจงผู้รับ สามารถใช้ฟังชั่น publish ไปยัง topic ที่กำหนดได้ ซึ่งจะมีแต่ microgear ที่ subscribe topoic นี้เท่านั้น ที่จะได้รับข้อความ
+**microgear.publish(*topic*, *message*, *retain*):** ในกรณีที่ต้องการส่งข้อความแบบไม่เจาะจงผู้รับ สามารถใช้ฟังชั่น publish ไปยัง topic ที่กำหนดได้ ซึ่งจะมีแต่ microgear ที่ subscribe topoic นี้เท่านั้น ที่จะได้รับข้อความ
 
 arguments
 
@@ -149,14 +149,14 @@ arguments
   * *retain* `boolean` - ระบุค่า `True` ถ้าต้องการเก็บข้อความไว้ หากมีการ subscribe topic นี้ก็จะได้รับข้อความนี้อีก ค่าปริยายเป็น `False` หากไม่ระบุ และถ้าต้องการลบข้อความที่บันทึกไว้ให้ส่งข้อความ "" ซึ่งมีความยาวเป็น 0 เพื่อล้างค่าข้อความที่ไว้ทึกไว้
 
 ```python
-client.publish("/outdoor/temp","28.5");
-client.publish("/outdoor/temp","28.5",{'retain':True});
+microgear.publish("/outdoor/temp","28.5");
+microgear.publish("/outdoor/temp","28.5",{'retain':True});
 ```
 
 
 
 
-**client.subscribe(*topic*)** microgear อาจจะมีความสนใจใน topic
+**microgear.subscribe(*topic*)** microgear อาจจะมีความสนใจใน topic
 ใดเป็นการเฉพาะ เราสามารถใช้ฟังก์ชั่น subscribe() ในการบอกรับ message ของ topic นั้นได้
 
 argument
@@ -166,13 +166,27 @@ argument
 
 
 ```python
-client.subscribe("/temp");
+microgear.subscribe("/temp");
 ```
 
-**client.resettoken()** สำหรับต้องการลบ Token ที่มีอยู่ ซึ่งจะทำการลบ Token ที่อยู่ภายใน cache และบน platform เมื่อลบแล้ว จำเป็นจะต้องขอ Token ใหม่ทุกครั้ง
+**microgear.resettoken()** สำหรับต้องการลบ Token ที่มีอยู่ ซึ่งจะทำการลบ Token ที่อยู่ภายใน cache และบน platform เมื่อลบแล้ว จำเป็นจะต้องขอ Token ใหม่ทุกครั้ง
 
 ```python
-client.resettoken();
+microgear.resettoken();
+```
+
+**microgear.wrtieFeed(*feedid*, *data*, *apikey*):** เขียนข้อมูลลง feed storage
+
+arguments
+
+* *feedid* `string` - ชื่อของ feed ที่ต้องการจะเขียนข้อมูล
+* *data* `dict` – ข้อมูลที่จะบันทึก ในรูปแบบ json
+* *apikey* `string` - apikey สำหรับตรวจสอบสิทธิ์ หากไม่กำหนด จะใช้ default apikey ของ feed ที่ให้สิทธิ์ไว้กับ AppID
+
+```python
+data = {"field1":random.randint(1, 10),"field2":random.randint(1, 10),"field3":random.randint(1, 10)}
+microgear.publish("myfeedid",data);
+microgear.publish("myfeedid",data,"myapikey");
 ```
 
 
@@ -181,7 +195,7 @@ client.resettoken();
 ---------------
 application ที่รันบน microgear จะมีการทำงานในแบบ event driven คือเป็นการทำงานตอบสนองต่อ event ต่างๆ ด้วยการเขียน callback function ขึ้นมารองรับในลักษณะๆดังต่อไปนี้
 
-**client.on_connect**  เกิดขึ้นเมื่อ microgear library เชื่อมต่อกับ platform สำเร็จ
+**microgear.on_connect**  เกิดขึ้นเมื่อ microgear library เชื่อมต่อกับ platform สำเร็จ
 
 ค่าที่ set
 
@@ -191,13 +205,13 @@ application ที่รันบน microgear จะมีการทำงา
 ```python
 def callback_connect() :
 	print "Now I am connected with netpie"
-client.on_ connect = callback_connect
+microgear.on_ connect = callback_connect
 ```
 
 
 
 
-**client.on_disconnect** เกิดขึ้นเมื่อ microgear library ตัดการเชื่อมต่อกับ platform
+**microgear.on_disconnect** เกิดขึ้นเมื่อ microgear library ตัดการเชื่อมต่อกับ platform
 
 ค่าที่ set
 
@@ -208,14 +222,14 @@ client.on_ connect = callback_connect
 ```python
 def callback_disconnect() :
 	print "Disconnected”
-client.on_disconnect = callback_disconnect
+microgear.on_disconnect = callback_disconnect
 
 ```
 
 
 
 
-**client.on_message** เกิดขึ้นเมื่อ ได้รับข้อความจากการ chat หรือ หัวข้อที่ subscribe
+**microgear.on_message** เกิดขึ้นเมื่อ ได้รับข้อความจากการ chat หรือ หัวข้อที่ subscribe
 
 ค่าที่ set
 * *callback* `function` - ฟังก์ชั่น ที่จะทำงานเมื่อได้รับข้อความ โดยฟังก์ชั่นนี้จะรับ parameter 2 ตัวคือ
@@ -226,12 +240,12 @@ client.on_disconnect = callback_disconnect
 ```python
 def callback_message(topic, message) :
   print "I got message from ", topic, ": ", message
-client.on_message= callback_message
+microgear.on_message= callback_message
 
 ```
 
 
-**client.on_present** event นี้จะเกิดขึ้นเมื่อมี microgear ใน appid เดียวกัน online เข้ามาเชื่อมต่อ netpie
+**microgear.on_present** event นี้จะเกิดขึ้นเมื่อมี microgear ใน appid เดียวกัน online เข้ามาเชื่อมต่อ netpie
 
 ค่าที่ set
 
@@ -243,14 +257,14 @@ client.on_message= callback_message
 ```python
 def callback_present(gearkey) :
 	print gearkey+" become online."
-client.on_present = callback_present
+microgear.on_present = callback_present
 
 ```
 
 
 
 
-**client.on_present** event นี้จะเกิดขึ้นเมื่อมี microgear ใน appid เดียวกัน offline หายไป
+**microgear.on_present** event นี้จะเกิดขึ้นเมื่อมี microgear ใน appid เดียวกัน offline หายไป
 
 ค่าที่ set
 
@@ -262,11 +276,11 @@ client.on_present = callback_present
 ```python
 def callback_absent(gearkey) :
 	print gearkey+" become offline."
-client.on_absent = callback_absent
+microgear.on_absent = callback_absent
 
 ```
 
-**client.on_warning** เป็น event ที่เกิดมีเหตุการณ์บางอย่างเกิดขึ้นขึ้น และมีการเตือนให้ทราบ
+**microgear.on_warning** เป็น event ที่เกิดมีเหตุการณ์บางอย่างเกิดขึ้นขึ้น และมีการเตือนให้ทราบ
 
 ค่าที่ set
 
@@ -278,11 +292,11 @@ client.on_absent = callback_absent
 ```python
 def callback_warning(msg) :
 	print msg
-client.on_warning = callback_warning
+microgear.on_warning = callback_warning
 
 ```
 
-**client.on_info** เป็น event ที่เกิดมีเหตุการณ์บางอย่างเกิดขึ้นขึ้นภายใน microgear
+**microgear.on_info** เป็น event ที่เกิดมีเหตุการณ์บางอย่างเกิดขึ้นขึ้นภายใน microgear
 
 ค่าที่ set
 
@@ -294,11 +308,11 @@ client.on_warning = callback_warning
 ```python
 def callback_info(msg) :
 	print msg
-client.on_info = callback_info
+microgear.on_info = callback_info
 
 ```
 
-**client.on_error** event นี้จะเกิดขึ้นเมื่อมี error
+**microgear.on_error** event นี้จะเกิดขึ้นเมื่อมี error
 
 ค่าที่ set
 
@@ -310,6 +324,6 @@ client.on_info = callback_info
 ```python
 def callback_error(msg) :
 	print msg
-client.on_error = callback_error
+microgear.on_error = callback_error
 
 ```
