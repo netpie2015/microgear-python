@@ -26,4 +26,4 @@ microgear.connect(False)
 
 while True:
     microgear.chat("doraemon","Hello world."+str(int(time.time())))
-    time.sleep(2)
+    time.sleep(3)
