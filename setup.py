@@ -1,11 +1,11 @@
-from distutils.core import setup
+from setuptools import setup
 setup(
   name = 'microgear',
   packages = ['microgear'], # this must be the same as the name above
-  version = '1.1.28',
+  version = '1.2.2',
   description = 'Client library of Python, connect application code or hardware to netpie platform.',
-  author = 'Ridnarong Promya',
-  author_email = 'developer@netpie.io',
+  author = 'netpie',
+  author_email = 'support@netpie.io',
   url = 'https://github.com/netpieio/microgear-python', # use the URL to the github repo
   keywords = ['netpie','iot','mqtt'], # arbitrary keywords
   classifiers = [],
