@@ -389,9 +389,9 @@ def writeFeed(feedid,data,feedkey=""):
             json += "\""+str(key)+"\""+":"+str(data[key])+","
         json = json[:len(json)-1] + "}"
         if feedkey == "":
-            microgear.publish("/@writefeed/"+feedid,json)
+            publish("/@writefeed/"+feedid,json)
         else:
-            microgear.publish("/@writefeed/"+feedid+"/"+feedkey,json)
+            publish("/@writefeed/"+feedid+"/"+feedkey,json)
         logging.debug(json)
     else:
         logging.debug("Invalid parameters, please try again")
