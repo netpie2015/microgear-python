@@ -167,7 +167,7 @@ microgear.subscribe("/temp");
 microgear.resettoken();
 ```
 
-**microgear.wrtieFeed(*feedid*, *data*, *apikey*):** write time series data to a feed storage
+**microgear.writeFeed(*feedid*, *data*, *apikey*):** write time series data to a feed storage
 
 arguments
 
@@ -177,8 +177,8 @@ arguments
 
 ```python
 data = {"field1":random.randint(1, 10),"field2":random.randint(1, 10),"field3":random.randint(1, 10)}
-microgear.wrtieFeed("myfeedid",data);
-microgear.wrtieFeed("myfeedid",data,"myapikey");
+microgear.writeFeed("myfeedid",data);
+microgear.writeFeed("myfeedid",data,"myapikey");
 ```
 
 
