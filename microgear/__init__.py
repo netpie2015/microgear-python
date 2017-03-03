@@ -1,7 +1,7 @@
 import logging
 __version__ = '1.1.28'
 
-gearauthsite = "http://ga.netpie.io:8080"
+gearauthsite = "http://pct.netpie.io:8080"
 gearauthrequesttokenendpoint = gearauthsite+"/api/rtoken"
 gearauthaccesstokenendpoint = gearauthsite+"/api/atoken"
 
