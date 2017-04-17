@@ -38,6 +38,7 @@ on_error = do_nothing
 on_warning = do_nothing
 on_info = do_nothing
 on_disconnect = do_nothing
+config_list = {}
 
 def create(gearkey,gearsecret, appid="", args = {}):
     if 'debugmode' in args:
@@ -395,3 +396,12 @@ def writeFeed(feedid,data,feedkey=""):
         logging.debug(json)
     else:
         logging.debug("Invalid parameters, please try again")
+
+def setConfig(key,value):
+    if(key=="GEARAUTH"):
+        config_list["GEARAUTH"] = value
+        microgear.gearauthsite = "http://"+value+":8080"
+
+def getConfig(key):
+    return config_list[key]
+
