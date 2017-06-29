@@ -8,6 +8,7 @@ CURRENT_DIR = os.path.abspath(os.path.dirname(sys.argv[0]))
 
 def get_item(key):
     """Return content in cached file in JSON format"""
+
     CACHED_KEY_FILE = os.path.join(CURRENT_DIR, key)
 
     try:
@@ -18,15 +19,18 @@ def get_item(key):
 
 def set_item(key,value):
     """Write JSON content from value argument to cached file and return"""
+
     CACHED_KEY_FILE = os.path.join(CURRENT_DIR, key)
 
-    open(CACHED_KEY_FILE, "wb").write(json.dumps({"_": value}).encode('UTF-8'))
+    with open(CACHED_KEY_FILE, "wb") as cached_key_file:
+        cached_key_file.write(json.dumps({"_": value}).encode('UTF-8'))
 
     return value
 
 
 def delete_item(key):
     """Delete cached file if present"""
+
     CACHED_KEY_FILE = os.path.join(CURRENT_DIR, key)
 
     if os.path.isfile(CACHED_KEY_FILE):
