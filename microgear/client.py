@@ -163,7 +163,7 @@ def auto_subscribeAndpublish():
         for topic in current_subscribe_list :
             microgear.mqtt_client.subscribe(topic)
             logging.debug("Auto subscribe "+topic)
-    
+
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
@@ -383,17 +383,22 @@ def resettoken():
 def disconnect():
     microgear.mqtt_client.disconnect();
 
-def writeFeed(feedid,data,feedkey=""):
+def writeFeed(feedid, data, feedkey=""):
+    """Writing data to NETPIE FEEDS
+
+    :param feedid: Your unique feed name, e.g., "MyFeed".
+    :param data: Dictionary of data to send to your feed, e.g., {"temp": 23.50, "humid": 51.90} only support number for now
+    :param feedkey: API key of your feed, feedkey allow client with API key to read/write to this feed
+
+    """
+
     if len(feedid)>0 and type(data) is dict:
-        json = "{"
-        for key in data:
-            json += "\""+str(key)+"\""+":"+str(data[key])+","
-        json = json[:len(json)-1] + "}"
-        if feedkey == "":
-            publish("/@writefeed/"+feedid,json)
+        message = json.dumps(data)
+        if not feedkey:
+            publish("/@writefeed/"+feedid,message)
         else:
-            publish("/@writefeed/"+feedid+"/"+feedkey,json)
-        logging.debug(json)
+            publish("/@writefeed/"+feedid+"/"+feedkey,message)
+        logging.debug(message)
     else:
         logging.debug("Invalid parameters, please try again")
 
