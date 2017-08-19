@@ -1,7 +1,9 @@
 import logging
-__version__ = '1.1.28'
+__version__ = '1.2.5'
 
-gearauthsite = "http://ga.netpie.io:8080"
+gearauthsite = "ga.netpie.io"
+gearapiport = '8080';
+gearapisecureport = '8081';
 gearauthrequesttokenendpoint = gearauthsite+"/api/rtoken"
 gearauthaccesstokenendpoint = gearauthsite+"/api/atoken"
 
@@ -19,3 +21,4 @@ gearexaddress = None
 gearexport = None
 mqtt_client = None
 logger = logging.getLogger("python-microgear")
+securemode = True

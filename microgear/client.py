@@ -3,23 +3,13 @@ import json
 import oauth2 as oauth
 import microgear
 from microgear import cache
-try:
-    from urllib.parse import urlencode
-    from urllib.parse import unquote
-    from urllib.parse import parse_qs
-except ImportError:
-    from urllib import urlencode
-    from urllib import unquote
-    from urlparse import parse_qs
-import httplib2
-import random
 import time
 import re
-import string
 import paho.mqtt.client as mqtt
 import threading
 import os
 import sys
+import requests
 
 def do_nothing(arg1=None, arg2=None):
     pass
@@ -42,12 +32,12 @@ config_list = {}
 
 def create(gearkey,gearsecret, appid="", args = {}):
     if 'debugmode' in args:
-        logging.basicConfig(level=logging.DEBUG,
+        logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%d/%m/%Y %I:%M:%S %p',
                         )
     else:
-        logging.basicConfig(level=logging.INFO,
+        logging.basicConfig(level=logging.WARNING,
                         format='%(asctime)s %(levelname)-8s %(message)s',
                         datefmt='%d/%m/%Y %I:%M:%S %p',
                         )
@@ -66,7 +56,7 @@ def create(gearkey,gearsecret, appid="", args = {}):
 
 def client_on_connect(client, userdata, rc):
     global block
-    logging.debug("Connected with result code "+str(rc))
+    logging.info("Connected with result code "+str(rc))
     if rc == 0 :
         on_connect()
         auto_subscribeAndpublish()
@@ -117,7 +107,7 @@ def client_on_subscribe(client, userdata, mid, granted_qos):
 def client_on_disconnect(client, userdata, rc):
     if rc!=0:
         on_disconnect()
-        logging.debug("Diconnected with result code "+str(rc))
+        logging.info("Diconnected with result code "+str(rc))
 
 
 def connect(block=False):
@@ -155,14 +145,12 @@ def connect(block=False):
 def auto_subscribeAndpublish():
     global publish_list
     global current_subscribe_list
-    if len(microgear.gearalias):
-        setalias(microgear.gearalias)
     if microgear.mqtt_client:
         microgear.mqtt_client.subscribe("/"+microgear.appid+"/&present")
         microgear.mqtt_client.subscribe("/"+microgear.appid+"/&absent")
         for topic in current_subscribe_list :
             microgear.mqtt_client.subscribe(topic)
-            logging.debug("Auto subscribe "+topic)
+            logging.info("Auto subscribe "+topic)
     
     else:
         on_error("Microgear currently is not available.")
@@ -180,7 +168,7 @@ def auto_subscribeAndpublish():
 
 def subscribe_thread(topic,qos=0):
     if microgear.mqtt_client :
-        logging.debug("Auto subscribe "+topic)
+        logging.info("Auto subscribe "+topic)
         microgear.mqtt_client.subscribe(topic,qos)
     else:
         on_error("Microgear currently is not available.")
@@ -211,7 +199,7 @@ def unsubscribe(topic):
         if "/"+microgear.appid+topic in current_subscribe_list:
             current_subscribe_list.remove("/"+microgear.appid+topic)
             microgear.mqtt_client.unsubscribe("/"+microgear.appid+topic)
-        logging.debug("Auto unsubscribe "+topic)
+        logging.info("Auto unsubscribe "+topic)
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
@@ -260,7 +248,7 @@ def writestream(stream,data):
     publish('/@writestream/'+stream,'{"data":'+data+'}')
 
 def get_token():
-    logging.debug("Check stored token.")
+    logging.info("Check stored token.")
     cached = cache.get_item("microgear-"+microgear.gearkey+".cache")
     if cached:
         if cached.get("accesstoken"):
@@ -281,30 +269,25 @@ def get_token():
         cached = cache.set_item("microgear-"+microgear.gearkey+".cache", {"key": microgear.gearkey})
 
 def get_requesttoken(cached):
-    logging.debug("Requesting a request token.")
-    consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
-    client = oauth.Client(consumer)
+    logging.info("Requesting a request token.")
+    path=""
+    url="" 
     if len(microgear.gearalias):
         verifier = microgear.gearalias
+        path = '/oauth2/authorize?'+"response_type=code&client_id=" + microgear.gearkey + "&scope=appid:" + microgear.appid +" "+"alias:" +microgear.gearalias+ "&state=mgrev:" + microgear.mgrev;
     else:
         verifier = microgear.mgrev
-    headers = {}
-    method = "POST"
-    params = {'oauth_callback': "scope=%s&mgrev=%s&appid=%s&verifier=%s" % (microgear.scope, microgear.mgrev, microgear.appid, verifier)}
-    req = oauth.Request.from_consumer_and_token(consumer, http_method=method,
-            http_url=microgear.gearauthrequesttokenendpoint, parameters=params)
-    req.sign_request(oauth.SignatureMethod_HMAC_SHA1(), consumer, None)
-    headers.update(req.to_header(realm="NETPIE"))
-    h = httplib2.Http(os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),".cache"))
-    resp, content = h.request(microgear.gearauthrequesttokenendpoint, method=method,
-            headers=headers)
-    parsed_resp = parse_qs(content.decode(encoding='UTF-8'))
-    if resp.status == 200:
-        cached["requesttoken"] = {
-            "token": parsed_resp['oauth_token'][0],
-            "secret": parsed_resp['oauth_token_secret'][0],
-            "verifier": verifier
-        }
+        path = '/oauth2/authorize?'+"response_type=code&client_id=" + microgear.gearkey + "&scope=appid:" + microgear.appid +"&state=mgrev:" + microgear.mgrev;
+    
+    if microgear.securemode:
+        url = "https://"+microgear.gearauthsite+":"+microgear.gearapisecureport+path;
+    else:
+        url = "http://"+microgear.gearauthsite+":"+microgear.gearapiport+path;
+    
+    response = requests.get(url)
+    response = response.url.split("code=")
+    if len(response)==2:
+        cached["requesttoken"] = {"token": response[1],"secret": None,"verifier": verifier}
         cache.set_item("microgear-"+microgear.gearkey+".cache", cached)
         microgear.requesttoken = cached["requesttoken"]
         get_accesstoken(cached)
@@ -312,37 +295,36 @@ def get_requesttoken(cached):
         on_error("Request token is not issued, please check your appkey and appsecret.")
         logging.error("Request token is not issued, please check your appkey and appsecret.")
 
+
+
+
 def get_accesstoken(cached):
     microgear.requesttoken = cached.get("requesttoken")
-    logging.debug("Already has request token.")
-    logging.debug("Requesting an access token.")
-    token = oauth.Token(key=microgear.requesttoken.get("token"), secret=microgear.requesttoken.get("secret"))
-    consumer = oauth.Consumer(key=microgear.gearkey, secret=microgear.gearsecret)
-    client = oauth.Client(consumer, token)
-    params = { "oauth_verifier": microgear.requesttoken["verifier"]}
-    headers = {}
-    method = "POST"
-    req = oauth.Request.from_consumer_and_token(consumer, token=token, http_method=method,
-            http_url=microgear.gearauthaccesstokenendpoint, parameters=params)
-    req.sign_request(oauth.SignatureMethod_HMAC_SHA1(), consumer, token)
-    headers.update(req.to_header(realm="NETPIE"))
-    h = httplib2.Http(os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),".cache"))
-    resp, content = h.request(microgear.gearauthaccesstokenendpoint, method=method,
-            headers=headers)
-    parsed_resp = parse_qs(content.decode(encoding='UTF-8'))
-    if resp.status == 200:
-        revokecode = hmac(parsed_resp['oauth_token_secret'][0]+"&"+microgear.gearsecret,parsed_resp['oauth_token'][0]).replace('/','_')
+    logging.info("Already has request token.")
+    logging.info("Requesting an access token.")
+    verifier = ""
+    url = ""
+    path = "/oauth2/token?grant_type=authorization_code&code=" + microgear.requesttoken.get("token") + "&client_id=" + microgear.gearkey + "&client_secret=" + microgear.gearsecret + "&state=mgrev:" + microgear.mgrev;
+    if microgear.securemode:
+        url = "https://"+microgear.gearauthsite+":"+microgear.gearapisecureport+path;
+    else:
+        url = "http://"+microgear.gearauthsite+":"+microgear.gearapiport+path;
+    response = requests.post(url)
+    if response.status_code==200:
+        datajson = json.loads(response.text)
+        token = datajson['access_token'].split(':')
+        revokecode = hmac(token[1]+"&"+microgear.gearsecret,token[0]).replace('/','_')
         cached["requesttoken"] = None
         cached["accesstoken"] = {
-            "token": parsed_resp['oauth_token'][0],
-            "secret": parsed_resp['oauth_token_secret'][0],
-            "endpoint": parsed_resp['endpoint'][0],
+            "token": token[0],
+            "secret": token[1],
+            "endpoint": datajson['endpoint'],
             "revokecode": revokecode
         }
-        flag = parsed_resp.get('flag',["P"])
-        if flag[0] == "P":
+        flag = datajson['flag']
+        if flag == "P":
             cache.set_item("microgear-"+microgear.gearkey+".cache", cached)
-        elif flag[0] == "S":
+        elif flag == "S":
             cache.set_item("microgear-"+microgear.gearkey+".cache", {})
         microgear.accesstoken = cached["accesstoken"]
     else:
@@ -350,11 +332,11 @@ def get_accesstoken(cached):
         on_error("Access token is not issued, please check your consumerkey and consumersecret.")
         logging.error("Access token is not issued, please check your consumerkey and consumersecret.")
 
+
 def hmac(key, message):
     import base64
     import hmac
     import hashlib
-    import urllib
 
     hash = hmac.new(key.encode('utf-8'),message.encode('utf-8'), hashlib.sha1).digest()
     password = base64.encodestring(hash)
@@ -368,9 +350,13 @@ def resettoken():
         microgear.accesstoken = cached.get("accesstoken",{})
         if "revokecode" in microgear.accesstoken :
             path = "/api/revoke/"+microgear.accesstoken["token"]+"/"+microgear.accesstoken["revokecode"]
-            h = httplib2.Http(os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])),".cache"))
-            resp, content = h.request(microgear.gearauthsite+path, method="GET")
-            if(resp.status==200):
+            url = ""
+            if microgear.securemode:
+                url = "https://"+microgear.gearauthsite+":"+microgear.gearapisecureport+path;
+            else:
+                url = "http://"+microgear.gearauthsite+":"+microgear.gearapiport+path;
+            response = requests.get(url)
+            if response.status_code==200:
                 cache.delete_item("microgear-"+microgear.gearkey+".cache")
             else:
                 on_error("Reset token error.")
@@ -393,15 +379,19 @@ def writeFeed(feedid,data,feedkey=""):
             publish("/@writefeed/"+feedid,json)
         else:
             publish("/@writefeed/"+feedid+"/"+feedkey,json)
-        logging.debug(json)
+        logging.info(json)
     else:
-        logging.debug("Invalid parameters, please try again")
+        logging.info("Invalid parameters, please try again")
 
 def setConfig(key,value):
     if(key=="GEARAUTH"):
         config_list["GEARAUTH"] = value
-        microgear.gearauthsite = "http://"+value+":8080"
+        microgear.gearauthsite = "http://"+value
 
 def getConfig(key):
     return config_list[key]
+
+def useTLS(boolean):
+    microgear.securemode = boolean
+
 
