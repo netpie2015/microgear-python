@@ -127,6 +127,8 @@ def connect(block=False):
     username = microgear.gearkey+"%"+str(int(time.time()))
     password = hmac(microgear.accesstoken["secret"]+"&"+microgear.gearsecret,microgear.accesstoken["token"]+"%"+username)
     microgear.mqtt_client.username_pw_set(username,password)
+    if microgear.securemode:
+        microgear.mqtt_client.tls_insecure_set(True)
     microgear.mqtt_client.connect(endpoint[0],int(endpoint[1]), 60)
     microgear.mqtt_client.on_connect = client_on_connect
     microgear.mqtt_client.on_message = client_on_message
