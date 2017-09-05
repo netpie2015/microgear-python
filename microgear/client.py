@@ -128,8 +128,10 @@ def connect(block=False):
     password = hmac(microgear.accesstoken["secret"]+"&"+microgear.gearsecret,microgear.accesstoken["token"]+"%"+username)
     microgear.mqtt_client.username_pw_set(username,password)
     if microgear.securemode:
-        microgear.mqtt_client.tls_insecure_set(True)
-    microgear.mqtt_client.connect(endpoint[0],int(endpoint[1]), 60)
+        microgear.mqtt_client.tls_set("netpieio.crt")
+        microgear.mqtt_client.connect(endpoint[0],int(microgear.gbsport), 60)
+    else:
+        microgear.mqtt_client.connect(endpoint[0],int(microgear.gbport), 60)
     microgear.mqtt_client.on_connect = client_on_connect
     microgear.mqtt_client.on_message = client_on_message
     microgear.mqtt_client.on_publish = client_on_publish
@@ -153,7 +155,6 @@ def auto_subscribeAndpublish():
         for topic in current_subscribe_list :
             microgear.mqtt_client.subscribe(topic)
             logging.info("Auto subscribe "+topic)
-    
     else:
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
@@ -285,7 +286,6 @@ def get_requesttoken(cached):
         url = "https://"+microgear.gearauthsite+":"+microgear.gearapisecureport+path;
     else:
         url = "http://"+microgear.gearauthsite+":"+microgear.gearapiport+path;
-    
     response = requests.get(url)
     response = response.url.split("code=")
     if len(response)==2:
