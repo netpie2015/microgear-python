@@ -4,6 +4,8 @@ __version__ = '1.2.5'
 gearauthsite = "ga.netpie.io"
 gearapiport = '8080';
 gearapisecureport = '8081';
+gbport = '1883';
+gbsport = '8883';
 gearauthrequesttokenendpoint = gearauthsite+"/api/rtoken"
 gearauthaccesstokenendpoint = gearauthsite+"/api/atoken"
 
