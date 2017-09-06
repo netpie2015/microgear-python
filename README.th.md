@@ -25,13 +25,13 @@ gearsecret =  <gearsecret>
 microgear.create(gearkey,gearsecret,appid,{'debugmode': True})
 
 def connection():
-    logging.debug("Now I am connected with netpie")
+    logging.info("Now I am connected with netpie")
 
 def subscription(topic,message):
-    logging.debug(topic+" "+message)
+    logging.info(topic+" "+message)
 
 def disconnect():
-    logging.debug("disconnected")
+    logging.info("disconnected")
 
 microgear.setalias("doraemon")
 microgear.on_connect = connection
