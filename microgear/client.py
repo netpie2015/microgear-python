@@ -1,6 +1,5 @@
 import logging
 import json
-import oauth2 as oauth
 import microgear
 from microgear import cache
 import time
