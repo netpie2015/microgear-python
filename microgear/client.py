@@ -110,7 +110,6 @@ def client_on_disconnect(client, userdata, rc):
         on_disconnect()
         logging.info("Diconnected with result code "+str(rc))
 
-
 def connect(block=False):
     global block_loop
     block_loop = block
@@ -168,8 +167,6 @@ def auto_subscribeAndpublish():
         on_error("Microgear currently is not available.")
         logging.error("Microgear currently is not available.")
 
-
-
 def subscribe_thread(topic,qos=0):
     if microgear.mqtt_client :
         logging.info("Auto subscribe "+topic)
@@ -191,7 +188,6 @@ def subscribe(topic,qos=0):
         t.start()
     else:
         subscribe_list.append("/"+microgear.appid+topic)
-
 
 def unsubscribe(topic):
     global current_subscribe_list
@@ -297,9 +293,6 @@ def get_requesttoken(cached):
     else:
         on_error("Request token is not issued, please check your appkey and appsecret.")
         logging.error("Request token is not issued, please check your appkey and appsecret.")
-
-
-
 
 def get_accesstoken(cached):
     microgear.requesttoken = cached.get("requesttoken")
