@@ -10,6 +10,7 @@ import threading
 import os
 import sys
 import requests
+import certifi
 
 def do_nothing(arg1=None, arg2=None):
     pass
@@ -128,7 +129,7 @@ def connect(block=False):
     password = hmac(microgear.accesstoken["secret"]+"&"+microgear.gearsecret,microgear.accesstoken["token"]+"%"+username)
     microgear.mqtt_client.username_pw_set(username,password)
     if microgear.securemode:
-        microgear.mqtt_client.tls_set("netpieio.crt")
+        microgear.mqtt_client.tls_set(certifi.where())
         microgear.mqtt_client.connect(endpoint[0],int(microgear.gbsport), 60)
     else:
         microgear.mqtt_client.connect(endpoint[0],int(microgear.gbport), 60)
