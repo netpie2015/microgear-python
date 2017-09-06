@@ -2,7 +2,11 @@
 -----------
 microgear- python is a client library for  Python  The library is used to connect application code or hardware with the NETPIE Platform's service for developing IoT applications. For more details on the NETPIE Platform, please visit https://netpie.io . 
 
-
+## Outgoing Network Port
+-----------
+Make sure ther following ports are allowed to connect from your network.
+- Non-TLS mode : 8080 and 1883 (microgear-nodejs uses this mode by default)
+- TLS mode : 8081 and 8883
 
 ## Installation
 -----------
@@ -179,6 +183,16 @@ arguments
 data = {"field1":random.randint(1, 10),"field2":random.randint(1, 10),"field3":random.randint(1, 10)}
 microgear.writeFeed("myfeedid",data);
 microgear.writeFeed("myfeedid",data,"myapikey");
+```
+
+**microgear.useTLS(tlsmode):** Enable or disable TLS. For microgear-python, TLS is disabled by default.
+
+arguments
+
+* *tlsmode* `boolean` - True or False
+
+```python
+microgear.useTLS(True);
 ```
 
 
