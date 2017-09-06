@@ -5,7 +5,7 @@ microgear- python is a client library for  Python  The library is used to connec
 ## Outgoing Network Port
 -----------
 Make sure ther following ports are allowed to connect from your network.
-- Non-TLS mode : 8080 and 1883 (microgear-nodejs uses this mode by default)
+- Non-TLS mode : 8080 and 1883 (microgear-python uses this mode by default)
 - TLS mode : 8081 and 8883
 
 ## Installation
