@@ -383,7 +383,7 @@ def writeFeed(feedid,data,feedkey=""):
 def setConfig(key,value):
     if(key=="GEARAUTH"):
         config_list["GEARAUTH"] = value
-        microgear.gearauthsite = "http://"+value
+        microgear.gearauthsite = value
 
 def getConfig(key):
     return config_list[key]
