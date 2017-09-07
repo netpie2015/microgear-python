@@ -24,3 +24,4 @@ gearexport = None
 mqtt_client = None
 logger = logging.getLogger("python-microgear")
 securemode = False
+state = False

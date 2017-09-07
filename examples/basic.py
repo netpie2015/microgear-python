@@ -25,5 +25,6 @@ microgear.subscribe("/mails")
 microgear.connect(False)
 
 while True:
-    microgear.chat("doraemon","Hello world."+str(int(time.time())))
-    time.sleep(3)
+	if(microgear.connected):
+		microgear.chat("doraemon","Hello world."+str(int(time.time())))
+	time.sleep(3)

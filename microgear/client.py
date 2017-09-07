@@ -56,6 +56,7 @@ def create(gearkey,gearsecret, appid="", args = {}):
 
 def client_on_connect(client, userdata, rc):
     global block
+    microgear.state = True
     logging.info("Connected with result code "+str(rc))
     if rc == 0 :
         on_connect()
@@ -106,6 +107,7 @@ def client_on_subscribe(client, userdata, mid, granted_qos):
 
 def client_on_disconnect(client, userdata, rc):
     if rc!=0:
+        microgear.state = False
         on_disconnect()
         logging.info("Diconnected with result code "+str(rc))
 
@@ -388,5 +390,9 @@ def getConfig(key):
 
 def useTLS(boolean):
     microgear.securemode = boolean
+
+def connected():
+    return micrgear.state
+
 
 
