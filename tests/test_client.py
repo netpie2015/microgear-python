@@ -4,13 +4,20 @@ import microgear
 from microgear.client import create
 
 
-class TestCreate(unittest.TestCase):
+class ClientCreateTests(unittest.TestCase):
     def setUp(self):
         self.gearkey = '1a2b3c4d5e6f7g8'
         self.gearsecret = 'A1B2C3d4e5f6G7H8i9j10k11L'
         self.appid = 'FooBar'
         self.gearalias = 'strecth'
         self.gearalias_more_than_16_characters = 'jessiestretchbuster'
+
+
+    def tearDown(self):
+        microgear.client.subscribe_list = []
+
+    def test_default_global_variables(self):
+        self.assertEqual(microgear.client.subscribe_list, [])
 
     def connection(self):
         return 'Connected'
@@ -21,17 +28,19 @@ class TestCreate(unittest.TestCase):
     def disconnect(self):
         return 'Disconnected'
 
+
     def test_create(self):
         """
         Test create client with `gearkey`, `gearsecret` and `appid` paremeters.
         """
+
         create(self.gearkey, self.gearsecret, self.appid)
 
         self.assertEqual(microgear.gearkey, self.gearkey)
         self.assertEqual(microgear.gearsecret, self.gearsecret)
         self.assertEqual(microgear.appid, self.appid)
 
-    def test_create_with_gearalias(self):
+    def test_create_with_gear_alias(self):
         """
         Test create client with `alias` argument settings.
         """
@@ -43,7 +52,7 @@ class TestCreate(unittest.TestCase):
 
         self.assertEqual(microgear.gearalias, self.gearalias)
 
-    def test_create_with_gearalias(self):
+    def test_create_with_gear_alias(self):
         """
         Test create client with `alias` argument settings more than 16
         characters..
@@ -92,5 +101,9 @@ class TestCreate(unittest.TestCase):
         self.assertEqual(microgear.on_disconnect(), 'Disconnected')
         self.assertNotEqual(microgear.on_disconnect(), 'Connected')
 
-#if __name__ == '__main__':
-#    unittest.main()
+    def test_client_subscribe(self):
+        microgear.client.subscribe_list = []
+        microgear.appid = self.appid
+        microgear.client.subscribe('message')
+        self.assertEqual(microgear.client.subscribe_list, ['/FooBarmessage'])
+
