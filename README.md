@@ -152,7 +152,6 @@ microgear.publish("/outdoor/temp","28.5",{'retain':True});
 
 
 
-
 **microgear.subscribe(*topic*)** microgear may be interested in some topic.  The developer can use the function subscribe() to subscribe a message belong to such topic. If the topic used to retain a message, the microgear will receive a message everytime it subscribes that topic.
 
 argument
@@ -193,6 +192,17 @@ arguments
 
 ```python
 microgear.useTLS(True);
+```
+
+**microgear.pushOwner(*message*):** push notification to NETPIE mobile application
+
+arguments
+
+* *message* `string` – message to be sent
+
+
+```python
+microgear.pushOwner("temp : 28.5");
 ```
 
 
