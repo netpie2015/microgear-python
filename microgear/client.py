@@ -248,6 +248,18 @@ def readstream(stream, filter):
 def writestream(stream,data):
     publish('/@writestream/'+stream,'{"data":'+data+'}')
 
+def pushOwner(message):
+    if type(message) is dict:
+        logging.info("push notification json")
+        json = "{"
+        for key in message:
+            json += "\""+str(key)+"\""+":"+str(message[key])+","
+        json = json[:len(json)-1] + "}"
+        publish("/@push/owner",json)
+    else:
+        logging.info("push notification message")
+        publish("/@push/owner",message)
+
 def get_token():
     logging.info("Check stored token.")
     cached = cache.get_item("microgear-"+microgear.gearkey+".cache")

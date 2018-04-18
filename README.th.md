@@ -143,10 +143,6 @@ microgear.chat("html","hello from python");
 
 
 
-
-
-
-
 **microgear.publish(*topic*, *message*, *retain*):** ในกรณีที่ต้องการส่งข้อความแบบไม่เจาะจงผู้รับ สามารถใช้ฟังชั่น publish ไปยัง topic ที่กำหนดได้ ซึ่งจะมีแต่ microgear ที่ subscribe topoic นี้เท่านั้น ที่จะได้รับข้อความ
 
 arguments
@@ -160,7 +156,6 @@ arguments
 microgear.publish("/outdoor/temp","28.5");
 microgear.publish("/outdoor/temp","28.5",{'retain':True});
 ```
-
 
 
 
@@ -204,6 +199,17 @@ arguments
 
 ```python
 microgear.useTLS(false);
+```
+
+**microgear.pushOwner(*message*):** ส่งการแจ้งเตือน ไปยัง NETPIE mobile application
+
+arguments
+
+* *message* `string` – ข้อความ
+
+
+```python
+microgear.pushOwner("temp : 28.5");
 ```
 
 
