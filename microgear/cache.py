@@ -16,7 +16,7 @@ def get_item(key):
         return None
 
 
-def set_item(key,value):
+def set_item(key, value):
     """Write JSON content from value argument to cached file and return"""
     CACHED_KEY_FILE = os.path.join(CURRENT_DIR, key)
 
@@ -31,4 +31,3 @@ def delete_item(key):
 
     if os.path.isfile(CACHED_KEY_FILE):
         os.remove(CACHED_KEY_FILE)
-
